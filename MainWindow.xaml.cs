@@ -21,7 +21,7 @@ namespace FragilityTests
 
         private void PerpendicularGaitSpeedTestClicked(object sender, RoutedEventArgs e)
         {
-            Title.Text = "Sa cambiao";
+            MainTitle.Text = "Sa cambiao";
             return;
         }
     }

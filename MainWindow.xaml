@@ -20,7 +20,7 @@
 
         <Image x:Name="CuatroochentaLogo" Source="/Images/480.jpg" Height="40" HorizontalAlignment="Right" Margin="0,0,4,0"/>
 
-        <TextBlock x:Name="Title" Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+        <TextBlock x:Name="MainTitle" Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Bottom"
 				 FontFamily="Segoe UI" FontSize="30" Margin="0,20,0,20">Seleccione la prueba</TextBlock>
 		
 

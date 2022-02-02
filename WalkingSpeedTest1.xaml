@@ -15,29 +15,28 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <!-- FIRST ROW ELEMENTS-->
-            <!-- <Image Grid.Row="0" HorizontalAlignment="Left" Source="Images\Logo.png" Stretch="Fill" Height="32" Width="81" Margin="0 10 0 5" />
-            -->
-            <TextBlock Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Bottom" 
-				   FontFamily="Segoe UI" FontSize="30">Walking Speed Test</TextBlock>
 
-            <!--<Image Grid.Row="0" Source="Images\Uji.png" Stretch="Fill" HorizontalAlignment="Right" Height="40" Width="40" Margin="0 0 0 5" />
-            -->
-            <!-- SECOND ROW ELEMENTS-->
-            <TextBlock Grid.Row="1" Margin="0 0 -1 0" HorizontalAlignment="Right" VerticalAlignment="Bottom"
-		        FontFamily="Segoe UI" FontSize="30"
-				Text="{Binding Path=BodyDistance}"></TextBlock>
+            <Image x:Name="UjiLogo" Source="/Images/UJI.png" Height="40" HorizontalAlignment="Left" Margin="0,0,0,0"/>
 
-            <TextBlock Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Bottom"
-				FontFamily="Segoe UI" FontSize="30"
-				Text="{Binding Path=WalkingTime}"></TextBlock>
+            <Image x:Name="KinectLogo" Source="/Images/Kinect.png" Height="30" HorizontalAlignment="Center" Margin="0,0,20,0"/>
 
-            <TextBlock Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Bottom"
-				FontFamily="Segoe UI" FontSize="20"
-				Text="{Binding Path=StatusTest}"></TextBlock>
+            <Image x:Name="CuatroochentaLogo" Source="/Images/480.jpg" Height="40" HorizontalAlignment="Right" Margin="0,0,4,0"/>
+
+            <TextBlock x:Name="TestTitle" Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+				     FontFamily="Segoe UI" FontSize="30" Margin="0,20,0,20"> Prueba de velocidad de la marcha</TextBlock>
+
+
+            <TextBlock x:Name="BodyDepth" Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+		        FontFamily="Segoe UI" FontSize="20"> 0 </TextBlock>
+
+            <TextBlock x:Name="WalkingTime" Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Bottom"
+				FontFamily="Segoe UI" FontSize="20"> 0 </TextBlock>
+
+            <TextBlock x:Name="StatusTest" Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+				    FontFamily="Segoe UI" FontSize="20"> </TextBlock>
 
             <!-- CAMERA VIEW ROW -->
-            <Viewbox Grid.Row="2" HorizontalAlignment="Center">
+            <Viewbox Grid.Row="3" HorizontalAlignment="Center">
                 <Image Source="{Binding ImageSource}" Stretch="UniformToFill" />
             </Viewbox>
 

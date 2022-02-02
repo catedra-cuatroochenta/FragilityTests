@@ -27,21 +27,17 @@
 
         private Body[] bodies = null;
 
-        public const float START_LINE = 4.5f;
+        public const float startLine = 3.5f;
 
-        public const float END_LINE = 0.7f;
+        public const float endLine = 1f;
 
-        private float _bodyDistance = 0f;
+        private float walkingTime = 0f;
 
-        private float _walkingTime = 0f;
+        private Stopwatch stopWatch = null;
 
-        private string _statusTest = initStatus;
+        private bool testIsRunning = false;
 
-        private Stopwatch _stopWatch = null;
-
-        private bool TestIsRunning = false;
-
-        private bool WasInStartZone = false;
+        private bool wasInStartZone = false;
 
         private StreamWriter streamWriter = new StreamWriter("Results.csv");
 
@@ -52,6 +48,8 @@
         private const string transitionStatus = "Siga caminando hacia la cámara.";
 
         private const string endStatus = "¡Genial! Ha terminado el test. Muchas gracias.";
+
+        private const string errorStatus = "¡Ups! Ha ocurrido algún problema, pruebe a reiniciar el sistema.";
 
         private class BodyJointsStatus
         {
@@ -122,6 +120,9 @@
             this.jointsStatus = new BodyJointsStatus();
 
             this.InitializeComponent();
+
+            UpdateTestStatus(initStatus);
+
         }
 
         /// INotifyPropertyChangedPropertyChanged event to allow window controls to bind to changeable data
@@ -136,67 +137,11 @@
             }
         }
 
-
-
-        /// Gets or sets the current Walking test status
-        public string StatusTest
-        {
-            get
-            {
-                return this._statusTest;
-            }
-
-            set
-            {
-                if (this._statusTest != value)
-                {
-                    this._statusTest = value;
-
-                    // notify any bound elements that the text has changed
-                    if (this.PropertyChanged != null)
-                    {
-                        this.PropertyChanged(this, new PropertyChangedEventArgs("StatusTest"));
-                    }
-                }
-            }
-        }
-
         private void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        /// Gets or sets the body distance to display
-        public float BodyDistance
-        {
-            get { return _bodyDistance; }
-            set
-            {
-                if (_bodyDistance != value)
-                {
-                    _bodyDistance = value;
-                    this.OnPropertyChanged("BodyDistance");
-                }
-            }
-        }
-
-        /// Gets or sets the walking time to display
-        public float WalkingTime
-        {
-            get
-            {
-                return this._walkingTime;
-            }
-
-            set
-            {
-                if (_walkingTime != value)
-                {
-                    _walkingTime = value;
-                    this.PropertyChanged(this, new PropertyChangedEventArgs("WalkingTime"));
-                }
-            }
-        }
 
         /// Execute shutdown tasks
         /// <param name="sender">object sending the event</param>
@@ -300,47 +245,43 @@
             /// Get the body depth
             float bodyDepth = this.GetBodyDepth(joints);
 
-            /// Display the body depth
+            /// Display the body depth and the gait speed time
             this.DisplayBodyDistance(bodyDepth);
+            this.StoreAndDisplayTime();
 
             /// Tercero, evaluamos la posicion del body y estado del test (ver pseudocodigo)
-            if (this.BodyInEndZone(bodyDepth) && TestIsRunning)
+            if (this.BodyInEndZone(bodyDepth) && testIsRunning)
             {
-                _stopWatch.Stop();
-                this.DisplayTime();
-                TestIsRunning = false;
-                StatusTest = endStatus;
+                stopWatch.Stop();
+                testIsRunning = false;
+                UpdateTestStatus(endStatus);
                 SaveOnFileTestResults();
             }
-            else if (this.BodyInTransitionZone(bodyDepth) && TestIsRunning)
+            else if (this.BodyInTransitionZone(bodyDepth) && testIsRunning)
             {
-                this.DisplayTime();
-                jointsStatus.AddBodyStatus(WalkingTime, joints);
+                jointsStatus.AddBodyStatus(walkingTime, joints);
             }
-            else if (this.BodyInTransitionZone(bodyDepth) && WasInStartZone)
+            else if (this.BodyInTransitionZone(bodyDepth) && wasInStartZone)
             {
-                _stopWatch = Stopwatch.StartNew();
-                this.DisplayTime();
-                TestIsRunning = true;
-                WasInStartZone = false;
-                StatusTest = transitionStatus;
-                jointsStatus.AddBodyStatus(WalkingTime, joints);
+                stopWatch = Stopwatch.StartNew();
+                testIsRunning = true;
+                wasInStartZone = false;
+                UpdateTestStatus(transitionStatus);
+                jointsStatus.AddBodyStatus(walkingTime, joints);
             }
-            else if (this.BodyInStartZone(bodyDepth) && TestIsRunning)
+            else if (this.BodyInStartZone(bodyDepth) && testIsRunning)
             {
-                _stopWatch.Reset();
-                this.DisplayTime();
+                stopWatch.Reset();
                 jointsStatus.ClearBodyStatus();
-                StatusTest = readyStatus;
-                TestIsRunning = false;
-                WasInStartZone = true;
+                UpdateTestStatus(readyStatus);
+                testIsRunning = false;
+                wasInStartZone = true;
             }
-            else if (this.BodyInStartZone(bodyDepth) && !WasInStartZone)
+            else if (this.BodyInStartZone(bodyDepth) && !wasInStartZone)
             {
-                this.DisplayTime();
-                StatusTest = readyStatus;
+                UpdateTestStatus(readyStatus);
                 jointsStatus.ClearBodyStatus();
-                WasInStartZone = true;
+                wasInStartZone = true;
             }
 
 
@@ -351,9 +292,9 @@
             try
             {
                 streamWriter.WriteLine("Date;" + DateTime.Now.ToString());
-                streamWriter.WriteLine("Distance Walked (m);" + (START_LINE - END_LINE));
-                streamWriter.WriteLine("Walking Time(s);" + WalkingTime);
-                streamWriter.WriteLine("Walking Speed(m/s);" + (START_LINE - END_LINE) / WalkingTime);
+                streamWriter.WriteLine("Distance Walked (m);" + (startLine - endLine));
+                streamWriter.WriteLine("Walking Time(s);" + walkingTime);
+                streamWriter.WriteLine("Walking Speed(m/s);" + (startLine - endLine) / walkingTime);
                 streamWriter.WriteLine("Instant" + ";" + "Head Depth" + ";" +
                     "Spine Shoulder Depth" + ";" + "Mid Spine Depth" + ";" + "Spine Base Depth" + ";" +
                     "Right Knee Depth" + ";" + "Left Knee Depth" + ";" +
@@ -363,22 +304,31 @@
             }
             catch (Exception e)
             {
-                StatusTest = e.Message;
+                UpdateTestStatus(errorStatus);
             }
 
         }
 
-        private void DisplayTime()
+        private void UpdateTestStatus(string newStatus)
         {
-            if (_stopWatch != null)
+            StatusTest.Text = newStatus;
+        }
+
+        private void StoreAndDisplayTime()
+        {
+            //Store the time on walkingTime var
+            if (stopWatch != null)
             {
-                var elapsedMillis = _stopWatch.ElapsedMilliseconds;
-                this.WalkingTime = elapsedMillis / 1000f;
+                var elapsedMillis = stopWatch.ElapsedMilliseconds;
+                this.walkingTime = elapsedMillis / 1000f;
             }
             else
             {
-                this.WalkingTime = 0;
+                this.walkingTime = 0;
             }
+            
+            //Display the time 
+            WalkingTime.Text = walkingTime.ToString();
         }
 
         private float GetBodyDepth(IReadOnlyDictionary<JointType, Joint> joints)
@@ -390,39 +340,29 @@
             float shoulderSpineDepth = joints[JointType.SpineShoulder].Position.Z;
             float headSpineDepth = joints[JointType.Head].Position.Z;
             float mean = (shoulderSpineDepth + headSpineDepth) / 2;
-            if (this.bodyIsTooFar(mean)) return 4.6f;
-            if (this.bodyIsTooClose(mean)) return 0.6f;
             return mean;
         }
 
-        private bool bodyIsTooClose(float depthBody)
-        {
-            return depthBody <= 0.6f && _bodyDistance <= 0.6f;
-        }
-
-        private bool bodyIsTooFar(float depthBody)
-        {
-            return depthBody >= 4.6f && _bodyDistance >= 4.6f;
-        }
 
         private void DisplayBodyDistance(float bodyDepth)
         {
-            this.BodyDistance = bodyDepth;
+            
+            BodyDepth.Text = bodyDepth.ToString();
         }
 
         private bool BodyInEndZone(float bodyDepth)
         {
-            return (bodyDepth < END_LINE);
+            return (bodyDepth < endLine);
         }
 
         private bool BodyInTransitionZone(float bodyDepth)
         {
-            return (bodyDepth > END_LINE && bodyDepth < START_LINE);
+            return (bodyDepth > endLine && bodyDepth < startLine);
         }
 
         private bool BodyInStartZone(float bodyDepth)
         {
-            return (bodyDepth > START_LINE);
+            return (bodyDepth > startLine);
         }
     }
 }
