@@ -14,9 +14,9 @@ namespace FragilityTests
 
         private void GaitSpeedTestClicked(object sender, RoutedEventArgs e)
         {
-            WalkingSpeedTest1 walkingSpeedTest = new WalkingSpeedTest1();
+            GaitSpeedTestWindow gaitSpeedTestWindow = new GaitSpeedTestWindow();
             this.Close();
-            walkingSpeedTest.Show();
+            gaitSpeedTestWindow.Show();
         }
 
         private void PerpendicularGaitSpeedTestClicked(object sender, RoutedEventArgs e)

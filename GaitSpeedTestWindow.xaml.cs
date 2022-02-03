@@ -11,7 +11,7 @@
     using System.IO;
     using System;
 
-    public partial class WalkingSpeedTest1 : Window
+    public partial class GaitSpeedTestWindow : Window
     {
         /// Active Kinect sensor
         private KinectSensor kinectSensor = null;
@@ -39,23 +39,31 @@
 
         private bool wasInStartZone = false;
 
+        private bool wasBodyFar = false;
+
+        private bool wasBodyClose = false;
+        
+        private BodyJointsPosition bodyJointsPosition;
+
         private StreamWriter streamWriter = new StreamWriter("Results.csv");
 
-        private const string initStatus = "Para empezar el test, cóloquese a una distancia \n de 4,5 metros y camine hacia la cámara";
+        private const string initStatus = "Para empezar el test, alejese de la cámara";
 
-        private const string readyStatus = "Ahora, camine hacia la cámara";
+        private const string readyStatus = "Perfecto, ahora camine hacia la cámara";
 
         private const string transitionStatus = "Siga caminando hacia la cámara.";
 
-        private const string endStatus = "¡Genial! Ha terminado el test. Muchas gracias.";
+        private const string endStatus = "¡Genial! Ha terminado el test. ¡Muchas gracias!";
 
         private const string errorStatus = "¡Ups! Ha ocurrido algún problema, pruebe a reiniciar el sistema.";
 
-        private class BodyJointsStatus
+        private int counter = 0;
+
+        private class BodyJointsPosition
         {
             Dictionary<float, float[]> depthBodyJoints;
 
-            public BodyJointsStatus()
+            public BodyJointsPosition()
             {
                 this.depthBodyJoints = new Dictionary<float, float[]>();
             }
@@ -99,9 +107,7 @@
 
         }
 
-        private BodyJointsStatus jointsStatus;
-
-        public WalkingSpeedTest1()
+        public GaitSpeedTestWindow()
         {
             this.kinectSensor = KinectSensor.GetDefault();
 
@@ -117,7 +123,7 @@
 
             this.DataContext = this;
 
-            this.jointsStatus = new BodyJointsStatus();
+            this.bodyJointsPosition = new BodyJointsPosition();
 
             this.InitializeComponent();
 
@@ -146,7 +152,7 @@
         /// Execute shutdown tasks
         /// <param name="sender">object sending the event</param>
         /// <param name="e">event arguments</param>
-        private void MainWindow_Closing(object sender, CancelEventArgs e)
+        private void GaitSpeedTestWindow_Closing(object sender, CancelEventArgs e)
         {
             if (this.bodyFrameReader != null)
             {
@@ -234,16 +240,22 @@
                     if (body.IsTracked)
                     {
                         IReadOnlyDictionary<JointType, Joint> joints = body.Joints;
-                        EvaluateTheWalkingTest(joints);
+                        EvaluateTheGaitSpeedTest(joints);
+                        counter++;
+                        ulong trackingId = body.TrackingId;
+                        Counter.Text = trackingId.ToString();
+                        break;
                     }
+      
                 }
             }
         }
 
-        private void EvaluateTheWalkingTest(IReadOnlyDictionary<JointType, Joint> joints)
+        private void EvaluateTheGaitSpeedTest(IReadOnlyDictionary<JointType, Joint> joints)
         {
             /// Get the body depth
             float bodyDepth = this.GetBodyDepth(joints);
+            UpdateBodyDepthProximity(bodyDepth);
 
             /// Display the body depth and the gait speed time
             this.DisplayBodyDistance(bodyDepth);
@@ -259,7 +271,7 @@
             }
             else if (this.BodyInTransitionZone(bodyDepth) && testIsRunning)
             {
-                jointsStatus.AddBodyStatus(walkingTime, joints);
+                bodyJointsPosition.AddBodyStatus(walkingTime, joints);
             }
             else if (this.BodyInTransitionZone(bodyDepth) && wasInStartZone)
             {
@@ -267,12 +279,12 @@
                 testIsRunning = true;
                 wasInStartZone = false;
                 UpdateTestStatus(transitionStatus);
-                jointsStatus.AddBodyStatus(walkingTime, joints);
+                bodyJointsPosition.AddBodyStatus(walkingTime, joints);
             }
             else if (this.BodyInStartZone(bodyDepth) && testIsRunning)
             {
                 stopWatch.Reset();
-                jointsStatus.ClearBodyStatus();
+                bodyJointsPosition.ClearBodyStatus();
                 UpdateTestStatus(readyStatus);
                 testIsRunning = false;
                 wasInStartZone = true;
@@ -280,7 +292,7 @@
             else if (this.BodyInStartZone(bodyDepth) && !wasInStartZone)
             {
                 UpdateTestStatus(readyStatus);
-                jointsStatus.ClearBodyStatus();
+                bodyJointsPosition.ClearBodyStatus();
                 wasInStartZone = true;
             }
 
@@ -299,14 +311,13 @@
                     "Spine Shoulder Depth" + ";" + "Mid Spine Depth" + ";" + "Spine Base Depth" + ";" +
                     "Right Knee Depth" + ";" + "Left Knee Depth" + ";" +
                     "Rigth Foot Depth" + ";" + "Left Foot Depth");
-                streamWriter.WriteLine(jointsStatus.ToString());
+                streamWriter.WriteLine(bodyJointsPosition.ToString());
                 streamWriter.WriteLine("\n");
             }
             catch (Exception e)
             {
                 UpdateTestStatus(errorStatus);
             }
-
         }
 
         private void UpdateTestStatus(string newStatus)
@@ -338,11 +349,54 @@
             //float midSpineDepth = joints[JointType.SpineMid].Position.Z;
             //float baseSpineDepth = joints[JointType.SpineBase].Position.Z;
             float shoulderSpineDepth = joints[JointType.SpineShoulder].Position.Z;
-            float headSpineDepth = joints[JointType.Head].Position.Z;
-            float mean = (shoulderSpineDepth + headSpineDepth) / 2;
+            float headDepth = joints[JointType.Head].Position.Z;
+            float mean = (headDepth) / 1;
+            if (BodyTooClose(mean)) return -1f;
+            if (BodyTooFar(mean)) return -2f;
             return mean;
         }
 
+        private bool BodyTooClose(float bodyDepth)
+        {
+            // Si habiamos detectado que estaba cerca de la cámara
+            //  y ahora detectamos valores de cero o negativos es porque está demasiado cerca
+            if(wasBodyClose && bodyDepth <=0f) return true;
+            return false;
+
+        }
+
+        private bool BodyTooFar(float bodyDepth)
+        {
+            // Si habíamos detectado que estaba alejado de la cámara 
+            //  y ahora detectamos valores de cero o negativos es porque está demasiado lejos
+            if(wasBodyFar && bodyDepth <=0f) return true;
+            return false;
+        }
+
+        private void UpdateBodyDepthProximity(float bodyDepth)
+        {
+            if (bodyDepth <= 1.0f)
+            {
+                wasBodyClose = true;
+                wasBodyFar = false;
+            } 
+            
+            else if (bodyDepth >= 4.0f)
+            {
+                wasBodyClose = false;
+                wasBodyFar = true;
+            } 
+            
+            else 
+            {
+                wasBodyClose = false;
+                wasBodyFar = false;
+            }
+
+            BodyFarOutput.Text = wasBodyFar.ToString();
+            BodyCloseOutput.Text = wasBodyClose.ToString();
+
+        }
 
         private void DisplayBodyDistance(float bodyDepth)
         {
