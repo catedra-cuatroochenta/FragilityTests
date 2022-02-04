@@ -14,6 +14,8 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
 
@@ -27,12 +29,7 @@
 				     FontFamily="Segoe UI" FontSize="30" Margin="0,20,0,20"> Prueba de velocidad de la marcha</TextBlock>
 
 
-            <TextBlock x:Name="BodyDepth" Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Bottom"
-		        FontFamily="Segoe UI" FontSize="20"> 0 </TextBlock>
-
-            <TextBlock x:Name="WalkingTime" Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Bottom"
-				FontFamily="Segoe UI" FontSize="20"> 0 </TextBlock>
-
+          
             <!-- CAMERA VIEW ROW -->
             <Viewbox Grid.Row="2" HorizontalAlignment="Center">
                 <Image Source="{Binding ImageSource}" Stretch="UniformToFill" />
@@ -43,13 +40,15 @@
 
             
             <!-- FOR DEBUG -->
-        <TextBlock x:Name="BodyCloseOutput" Grid.Row="4" HorizontalAlignment="Left" VerticalAlignment="Bottom"
-		            FontFamily="Segoe UI" FontSize="20"></TextBlock>
 
-        <TextBlock x:Name="BodyFarOutput" Grid.Row="4" HorizontalAlignment="Right" VerticalAlignment="Bottom"
-				    FontFamily="Segoe UI" FontSize="20"></TextBlock>
+        <TextBlock x:Name="BodyDepth" Grid.Row="4" HorizontalAlignment="Left" VerticalAlignment="Bottom"
+		        FontFamily="Segoe UI" FontSize="15"> Profundidad: </TextBlock>
 
-        <TextBlock x:Name="Counter" Grid.Row="4" HorizontalAlignment="Center" VerticalAlignment="Bottom"
-                       FontFamily="Segoe UI" FontSize="20">0</TextBlock>
+        <TextBlock x:Name="WalkingTime" Grid.Row="5" HorizontalAlignment="Left" VerticalAlignment="Bottom"
+				FontFamily="Segoe UI" FontSize="15"> Tiempo: </TextBlock>
+
+        <TextBlock x:Name="BodyFarOutput" Grid.Row="6" HorizontalAlignment="Left" VerticalAlignment="Bottom"
+				    FontFamily="Segoe UI" FontSize="15">Cuerpo alejado: </TextBlock>
+
     </Grid>
 </Window>

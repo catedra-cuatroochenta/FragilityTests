@@ -27,11 +27,11 @@
 
         private Body[] bodies = null;
 
-        public const float startLine = 3.5f;
+        public const float startLine = 4.3f;   // Ideal: 4.3f
 
-        public const float endLine = 1f;
+        public const float endLine = 0.8f;     // Ideal: 0.8f
 
-        private float walkingTime = 0f;
+        private float walkingTime = 0f;     
 
         private Stopwatch stopWatch = null;
 
@@ -39,10 +39,10 @@
 
         private bool wasInStartZone = false;
 
-        private bool wasBodyFar = false;
+        private bool bodyTooFar = false;
 
-        private bool wasBodyClose = false;
-        
+        private bool bodyOutOfRange = false;
+
         private BodyJointsPosition bodyJointsPosition;
 
         private StreamWriter streamWriter = new StreamWriter("Results.csv");
@@ -57,7 +57,7 @@
 
         private const string errorStatus = "¡Ups! Ha ocurrido algún problema, pruebe a reiniciar el sistema.";
 
-        private int counter = 0;
+        private const string outOfRangeStatus = "Se encuentra demasiado alejado, acérquese a la cámara.";
 
         private class BodyJointsPosition
         {
@@ -241,9 +241,6 @@
                     {
                         IReadOnlyDictionary<JointType, Joint> joints = body.Joints;
                         EvaluateTheGaitSpeedTest(joints);
-                        counter++;
-                        ulong trackingId = body.TrackingId;
-                        Counter.Text = trackingId.ToString();
                         break;
                     }
       
@@ -255,11 +252,11 @@
         {
             /// Get the body depth
             float bodyDepth = this.GetBodyDepth(joints);
-            UpdateBodyDepthProximity(bodyDepth);
 
-            /// Display the body depth and the gait speed time
+            /// Store and display values
+            this.StoreTime();
+            this.DisplayDebugValues();
             this.DisplayBodyDistance(bodyDepth);
-            this.StoreAndDisplayTime();
 
             /// Tercero, evaluamos la posicion del body y estado del test (ver pseudocodigo)
             if (this.BodyInEndZone(bodyDepth) && testIsRunning)
@@ -296,9 +293,78 @@
                 wasInStartZone = true;
             }
 
-
         }
 
+        private float GetBodyDepth(IReadOnlyDictionary<JointType, Joint> joints)
+        {
+            /// Inicialmente devuelvo la media
+            /// Lo ideal sería descartar los valores que se alejen mucho 
+            float midSpineDepth = joints[JointType.SpineMid].Position.Z;
+            float baseSpineDepth = joints[JointType.SpineBase].Position.Z;
+            float shoulderSpineDepth = joints[JointType.SpineShoulder].Position.Z;
+            float headDepth = joints[JointType.Head].Position.Z;
+            float mean = (headDepth+ midSpineDepth + baseSpineDepth + shoulderSpineDepth) / 4;
+            EvaluateBodyDepth(mean);
+            if (bodyOutOfRange)
+            {
+                UpdateTestStatus(outOfRangeStatus);
+                return float.PositiveInfinity;
+            }
+            return mean;
+        }
+        
+        private void EvaluateBodyDepth(float currrentBodyDepth)
+        {
+
+            // Fuera de rango:
+            if (bodyTooFar && currrentBodyDepth <= 1f)
+            {
+                bodyOutOfRange = true;
+                bodyTooFar = false;
+            }
+            // Deja de estar fuera de rango
+            else if (bodyOutOfRange && currrentBodyDepth >= 4f)
+            {
+                bodyOutOfRange = false;
+                bodyTooFar = true;
+            }
+            // Deja de estar lejos:
+            else if (bodyTooFar && currrentBodyDepth <= 4f && currrentBodyDepth >= 3f)
+            {
+                bodyTooFar = false;
+            }
+            // Vuelve a estar lejos
+            else if (currrentBodyDepth >= 4f)
+            {
+                bodyTooFar = true;
+            }
+        }
+        
+        private void DisplayBodyDistance(float bodyDepth)
+        {
+            BodyDepth.Text = "Profundidad: " +  bodyDepth.ToString();
+        }
+        
+        private void DisplayDebugValues()
+        {
+            BodyFarOutput.Text = "Cuerpo alejado: " + bodyTooFar.ToString();
+            WalkingTime.Text = "Tiempo: " + walkingTime.ToString();
+        }
+
+        private void StoreTime()
+        {
+            //Store the time on walkingTime var
+            if (stopWatch != null)
+            {
+                var elapsedMillis = stopWatch.ElapsedMilliseconds;
+                this.walkingTime = elapsedMillis / 1000f;
+            }
+            else
+            {
+                this.walkingTime = 0;
+            }
+        }
+        
         private void SaveOnFileTestResults()
         {
             try
@@ -319,89 +385,10 @@
                 UpdateTestStatus(errorStatus);
             }
         }
-
+        
         private void UpdateTestStatus(string newStatus)
         {
             StatusTest.Text = newStatus;
-        }
-
-        private void StoreAndDisplayTime()
-        {
-            //Store the time on walkingTime var
-            if (stopWatch != null)
-            {
-                var elapsedMillis = stopWatch.ElapsedMilliseconds;
-                this.walkingTime = elapsedMillis / 1000f;
-            }
-            else
-            {
-                this.walkingTime = 0;
-            }
-            
-            //Display the time 
-            WalkingTime.Text = walkingTime.ToString();
-        }
-
-        private float GetBodyDepth(IReadOnlyDictionary<JointType, Joint> joints)
-        {
-            /// Inicialmente devuelvo la media
-            /// Lo ideal sería descartar los valores que se alejen mucho 
-            //float midSpineDepth = joints[JointType.SpineMid].Position.Z;
-            //float baseSpineDepth = joints[JointType.SpineBase].Position.Z;
-            float shoulderSpineDepth = joints[JointType.SpineShoulder].Position.Z;
-            float headDepth = joints[JointType.Head].Position.Z;
-            float mean = (headDepth) / 1;
-            if (BodyTooClose(mean)) return -1f;
-            if (BodyTooFar(mean)) return -2f;
-            return mean;
-        }
-
-        private bool BodyTooClose(float bodyDepth)
-        {
-            // Si habiamos detectado que estaba cerca de la cámara
-            //  y ahora detectamos valores de cero o negativos es porque está demasiado cerca
-            if(wasBodyClose && bodyDepth <=0f) return true;
-            return false;
-
-        }
-
-        private bool BodyTooFar(float bodyDepth)
-        {
-            // Si habíamos detectado que estaba alejado de la cámara 
-            //  y ahora detectamos valores de cero o negativos es porque está demasiado lejos
-            if(wasBodyFar && bodyDepth <=0f) return true;
-            return false;
-        }
-
-        private void UpdateBodyDepthProximity(float bodyDepth)
-        {
-            if (bodyDepth <= 1.0f)
-            {
-                wasBodyClose = true;
-                wasBodyFar = false;
-            } 
-            
-            else if (bodyDepth >= 4.0f)
-            {
-                wasBodyClose = false;
-                wasBodyFar = true;
-            } 
-            
-            else 
-            {
-                wasBodyClose = false;
-                wasBodyFar = false;
-            }
-
-            BodyFarOutput.Text = wasBodyFar.ToString();
-            BodyCloseOutput.Text = wasBodyClose.ToString();
-
-        }
-
-        private void DisplayBodyDistance(float bodyDepth)
-        {
-            
-            BodyDepth.Text = bodyDepth.ToString();
         }
 
         private bool BodyInEndZone(float bodyDepth)
