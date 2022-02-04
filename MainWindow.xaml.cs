@@ -14,15 +14,16 @@ namespace FragilityTests
 
         private void GaitSpeedTestClicked(object sender, RoutedEventArgs e)
         {
-            GaitSpeedTestWindow gaitSpeedTestWindow = new GaitSpeedTestWindow();
+            GaitSpeedTestWindow window = new GaitSpeedTestWindow();
             this.Close();
-            gaitSpeedTestWindow.Show();
+            window.Show();
         }
 
         private void PerpendicularGaitSpeedTestClicked(object sender, RoutedEventArgs e)
         {
-            MainTitle.Text = "Sa cambiao";
-            return;
+            PerpendicularGaitSpeedTestWindow window = new PerpendicularGaitSpeedTestWindow();
+            this.Close();
+            window.Show();
         }
     }
 }
