@@ -41,8 +41,6 @@
 
         private bool bodyTooFar = false;
 
-        private bool bodyOutOfRange = false;
-
         private BodyJointsPosition bodyJointsPosition;
 
         private StreamWriter streamWriter = new StreamWriter("Results.csv");
@@ -58,54 +56,6 @@
         private const string errorStatus = "¡Ups! Ha ocurrido algún problema, pruebe a reiniciar el sistema.";
 
         private const string outOfRangeStatus = "Se encuentra demasiado alejado, acérquese a la cámara.";
-
-        private class BodyJointsPosition
-        {
-            Dictionary<float, float[]> xAxisBodyJoints;
-
-            public BodyJointsPosition()
-            {
-                this.xAxisBodyJoints = new Dictionary<float, float[]>();
-            }
-
-            public void AddBodyStatus(float instant, IReadOnlyDictionary<JointType, Joint> joints)
-            {
-                float[] jointsxValues = new float[8];
-                jointsxValues[0] = joints[JointType.Head].Position.X;
-                jointsxValues[1] = joints[JointType.SpineShoulder].Position.X;
-                jointsxValues[2] = joints[JointType.SpineMid].Position.X;
-                jointsxValues[3] = joints[JointType.SpineBase].Position.X;
-                jointsxValues[4] = joints[JointType.KneeRight].Position.X;
-                jointsxValues[5] = joints[JointType.KneeLeft].Position.X;
-                jointsxValues[6] = joints[JointType.FootRight].Position.X;
-                jointsxValues[7] = joints[JointType.FootLeft].Position.X;
-
-                this.xAxisBodyJoints.Add(instant, jointsxValues);
-            }
-
-            public void ClearBodyStatus()
-            {
-                this.xAxisBodyJoints.Clear();
-            }
-
-
-            public override String ToString()
-            {
-                string result = string.Empty;
-                foreach (KeyValuePair<float, float[]> kvp in xAxisBodyJoints)
-                {
-                    string xAxisValues = string.Empty;
-                    foreach (float xAxisPos in kvp.Value)
-                    {
-                        xAxisValues += (xAxisPos + ";");
-                    }
-                    result += string.Format("{0};{1}\n", kvp.Key, xAxisValues);
-                }
-                return result;
-
-            }
-
-        }
 
         public PerpendicularGaitSpeedTestWindow()
         {
@@ -125,10 +75,12 @@
 
             this.bodyJointsPosition = new BodyJointsPosition();
 
+            this.stopWatch = Stopwatch.StartNew();
+            this.stopWatch.Reset();
+
             this.InitializeComponent();
 
             UpdateTestStatus(initStatus);
-
         }
 
         /// INotifyPropertyChangedPropertyChanged event to allow window controls to bind to changeable data
@@ -173,8 +125,11 @@
                 this.kinectSensor.Close();
                 this.kinectSensor = null;
             }
-            streamWriter.Close();
-
+            if (this.streamWriter != null)
+            {
+                streamWriter.Close();
+                streamWriter = null;
+            }
         }
 
         /// Handles the color frame data arriving from the sensor
@@ -253,45 +208,55 @@
             /// Get the body pos
             float bodyXAxisPos = this.GetBodyXAxisPos(joints);
 
-            /// Store and display values
-            this.StoreTime();
-            this.DisplayDebugValues();
-            this.DisplayBodyPos(bodyXAxisPos);
-
-            /// Tercero, evaluamos la posicion del body y estado del test (ver pseudocodigo)
-            if (this.BodyInEndZone(bodyXAxisPos) && testIsRunning)
+            /// Si completa el test
+            if (BodyInEndZone(bodyXAxisPos) && testIsRunning)
             {
                 stopWatch.Stop();
+                UpdateWalkingTime();
                 testIsRunning = false;
-                UpdateTestStatus(endStatus);
+                bodyJointsPosition.AddBodyStatus(walkingTime, joints);
                 SaveOnFileTestResults();
+                bodyJointsPosition.ClearBodyStatus();
+                UpdateTestStatus(endStatus);
             }
-            else if (this.BodyInTransitionZone(bodyXAxisPos) && testIsRunning)
+            /// Si esta en medio del test
+            else if (BodyInTransitionZone(bodyXAxisPos) && testIsRunning)
             {
+                UpdateWalkingTime();
                 bodyJointsPosition.AddBodyStatus(walkingTime, joints);
             }
-            else if (this.BodyInTransitionZone(bodyXAxisPos) && wasInStartZone)
+            /// Si acaba de empezar el test
+            else if (BodyInTransitionZone(bodyXAxisPos) && wasInStartZone)
             {
-                stopWatch = Stopwatch.StartNew();
+                stopWatch.Start();
+                UpdateWalkingTime();
                 testIsRunning = true;
                 wasInStartZone = false;
-                UpdateTestStatus(transitionStatus);
                 bodyJointsPosition.AddBodyStatus(walkingTime, joints);
+                UpdateTestStatus(transitionStatus);
             }
-            else if (this.BodyInStartZone(bodyXAxisPos) && testIsRunning)
+            /// Si estaba haciendo el test pero vuelve a empezar
+            else if (BodyInStartZone(bodyXAxisPos) && testIsRunning)
             {
                 stopWatch.Reset();
-                bodyJointsPosition.ClearBodyStatus();
-                UpdateTestStatus(readyStatus);
+                UpdateWalkingTime();
                 testIsRunning = false;
                 wasInStartZone = true;
-            }
-            else if (this.BodyInStartZone(bodyXAxisPos) && !wasInStartZone)
-            {
-                UpdateTestStatus(readyStatus);
                 bodyJointsPosition.ClearBodyStatus();
-                wasInStartZone = true;
+                UpdateTestStatus(readyStatus);
             }
+            /// Si esta preparado para empezar el test
+            else if (BodyInStartZone(bodyXAxisPos) && !wasInStartZone)
+            {
+                stopWatch.Reset();
+                UpdateWalkingTime();
+                wasInStartZone = true;
+                UpdateTestStatus(readyStatus);
+            }
+
+            /// Display values
+            DisplayDebugValues();
+            DisplayBodyPos(bodyXAxisPos);
 
         }
 
@@ -304,40 +269,7 @@
             float shoulderSpinePos = joints[JointType.SpineShoulder].Position.X;
             float headPos = joints[JointType.Head].Position.X;
             float mean = (headPos + midSpinePos + baseSpinePos + shoulderSpinePos) / 4;
-            /*EvaluateBodyPos(mean);
-            if (bodyOutOfRange)
-            {
-                UpdateTestStatus(outOfRangeStatus);
-                return float.PositiveInfinity;
-            }*/
             return mean;
-        }
-
-        private void EvaluateBodyPos(float currrentBodyPos)
-        {
-
-            // Fuera de rango:
-            if (bodyTooFar && currrentBodyPos <= 1f)
-            {
-                bodyOutOfRange = true;
-                bodyTooFar = false;
-            }
-            // Deja de estar fuera de rango
-            else if (bodyOutOfRange && currrentBodyPos >= 4f)
-            {
-                bodyOutOfRange = false;
-                bodyTooFar = true;
-            }
-            // Deja de estar lejos:
-            else if (bodyTooFar && currrentBodyPos <= 4f && currrentBodyPos >= 3f)
-            {
-                bodyTooFar = false;
-            }
-            // Vuelve a estar lejos
-            else if (currrentBodyPos >= 4f)
-            {
-                bodyTooFar = true;
-            }
         }
 
         private void DisplayBodyPos(float bodyXAxisPos)
@@ -347,11 +279,11 @@
 
         private void DisplayDebugValues()
         {
-            BodyFarOutput.Text = "Cuerpo alejado: " + bodyTooFar.ToString();
-            WalkingTime.Text = "Tiempo: " + walkingTime.ToString();
+            BodyFarOutput.Text = "Cuerpo alejado: " + this.bodyTooFar.ToString();
+            WalkingTime.Text = "Tiempo: " + this.walkingTime.ToString();
         }
 
-        private void StoreTime()
+        private void UpdateWalkingTime()
         {
             //Store the time on walkingTime var
             if (stopWatch != null)
@@ -369,6 +301,7 @@
         {
             try
             {
+                streamWriter.WriteLine("Test;" + "Perpendicular Gait Speed Test");
                 streamWriter.WriteLine("Date;" + DateTime.Now.ToString());
                 streamWriter.WriteLine("Distance Walked (m);" + (startLine - endLine));
                 streamWriter.WriteLine("Walking Time(s);" + walkingTime);
@@ -377,8 +310,9 @@
                     "Spine Shoulder Pos" + ";" + "Mid Spine Pos" + ";" + "Spine Base Pos" + ";" +
                     "Right Knee Pos" + ";" + "Left Knee Pos" + ";" +
                     "Rigth Foot Pos" + ";" + "Left Foot Pos");
-                streamWriter.WriteLine(bodyJointsPosition.ToString());
+                streamWriter.WriteLine(bodyJointsPosition.ToStringXAxisValues());
                 streamWriter.WriteLine("\n");
+                streamWriter.Flush();
             }
             catch (Exception e)
             {
