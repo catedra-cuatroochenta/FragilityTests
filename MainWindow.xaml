@@ -11,7 +11,8 @@
             <RowDefinition Height="Auto"/>
 			<RowDefinition Height="Auto" />
 			<RowDefinition Height="Auto" />
-			<RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
 		</Grid.RowDefinitions>
 
 		<Image x:Name="UjiLogo" Source="/Images/UJI.png" Height="40" HorizontalAlignment="Left" Margin="0,0,0,0"/>
@@ -30,5 +31,8 @@
         <Button x:Name="PerpendicularGaitSpeedTest" Click="PerpendicularGaitSpeedTestClicked" 
 				Grid.Row="3" Margin="20" Width="200" Height="50" >Test de velocidad (perpendicular)</Button>
 
-	</Grid>
+        <Button x:Name="GetUpTest" Click="GetUpTestClicked" 
+				Grid.Row="4" Margin="20" Width="200" Height="50" >Test de levantarse de la silla</Button>
+
+    </Grid>
 </Window>

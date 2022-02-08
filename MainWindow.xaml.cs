@@ -25,5 +25,12 @@ namespace FragilityTests
             this.Close();
             window.Show();
         }
+
+        private void GetUpTestClicked(object sender, RoutedEventArgs e)
+        {
+            PerpendicularGaitSpeedTestWindow window = new PerpendicularGaitSpeedTestWindow();
+            this.Close();
+            window.Show();
+        }
     }
 }

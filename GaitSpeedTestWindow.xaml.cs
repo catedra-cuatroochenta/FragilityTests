@@ -27,7 +27,7 @@
 
         private Body[] bodies = null;
 
-        private const float startLine = 3.5f;   // Ideal: 4.3f
+        private const float startLine = 4.3f;   // Ideal: 4.3f
 
         private const float endLine = 0.8f;     // Ideal: 0.8f
 

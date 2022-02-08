@@ -27,9 +27,9 @@
 
         private Body[] bodies = null;
 
-        public const float startLine = 1.0f;   // Ideal: 2f
+        public const float startLine = 2.0f;   // Ideal: 2f
 
-        public const float endLine = -1.0f;     // Ideal: -2f
+        public const float endLine = -2.0f;     // Ideal: -2f
 
         private float walkingTime = 0f;
 
