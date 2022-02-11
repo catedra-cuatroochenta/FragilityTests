@@ -16,11 +16,8 @@
         /// Active Kinect sensor
         private KinectSensor kinectSensor = null;
 
-        /// Reader for color frames
-        private ColorFrameReader colorFrameReader = null;
-
-        /// Reader for body frames
-        private BodyFrameReader bodyFrameReader = null;
+        /// kinect reader for color, depth, body, etc, frames
+        MultiSourceFrameReader reader;
 
         /// Bitmap to display
         private WriteableBitmap colorBitmap = null;
@@ -59,35 +56,30 @@
 
         private const string outOfRangeStatus = "Se encuentra demasiado alejado, acérquese a la cámara.";
 
-       
         public GaitSpeedTestWindow()
         {
-            this.kinectSensor = KinectSensor.GetDefault();
+            kinectSensor = KinectSensor.GetDefault();
+            kinectSensor.Open();
 
-            this.colorFrameReader = this.kinectSensor.ColorFrameSource.OpenReader();
-            this.colorFrameReader.FrameArrived += this.Reader_ColorFrameArrived;
-            this.bodyFrameReader = this.kinectSensor.BodyFrameSource.OpenReader();
-            this.bodyFrameReader.FrameArrived += this.Reader_FrameArrived;
+            reader = kinectSensor.OpenMultiSourceFrameReader(FrameSourceTypes.Color |
+                                                        FrameSourceTypes.Body);
+            reader.MultiSourceFrameArrived += Reader_MultiSourceFrameArrived;
 
             FrameDescription colorFrameDescription = this.kinectSensor.ColorFrameSource.CreateFrameDescription(ColorImageFormat.Bgra);
-            this.colorBitmap = new WriteableBitmap(colorFrameDescription.Width, colorFrameDescription.Height, 96.0, 96.0, PixelFormats.Bgr32, null);
+            colorBitmap = new WriteableBitmap(colorFrameDescription.Width, colorFrameDescription.Height, 96.0, 96.0, PixelFormats.Bgr32, null);
 
-            this.kinectSensor.Open();
 
-            this.DataContext = this;
+            DataContext = this;
 
-            this.bodyJointsPosition = new BodyJointsPosition();
+            bodyJointsPosition = new BodyJointsPosition();
 
-            this.stopWatch = Stopwatch.StartNew();
-            this.stopWatch.Reset();
+            stopWatch = Stopwatch.StartNew();
+            stopWatch.Reset();
 
             InitializeComponent();
 
             UpdateTestStatus(initStatus);
         }
-
-        /// INotifyPropertyChangedPropertyChanged event to allow window controls to bind to changeable data
-        public event PropertyChangedEventHandler PropertyChanged;
 
         /// Gets the bitmap to display
         public ImageSource ImageSource
@@ -98,29 +90,16 @@
             }
         }
 
-        private void OnPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-
         /// Execute shutdown tasks
         /// <param name="sender">object sending the event</param>
         /// <param name="e">event arguments</param>
         private void GaitSpeedTestWindow_Closing(object sender, CancelEventArgs e)
         {
-            if (this.bodyFrameReader != null)
+            if (this.reader != null)
             {
                 // BodyFrameReader is IDisposable
-                this.bodyFrameReader.Dispose();
-                this.bodyFrameReader = null;
-            }
-
-            if (this.colorFrameReader != null)
-            {
-                // ColorFrameReder is IDisposable
-                this.colorFrameReader.Dispose();
-                this.colorFrameReader = null;
+                this.reader.Dispose();
+                this.reader = null;
             }
 
             if (this.kinectSensor != null)
@@ -136,13 +115,31 @@
             }
         }
 
-        /// Handles the color frame data arriving from the sensor
+        /// Handles the body frame data and color frame data arriving from the sensor
         /// <param name="sender">object sending the event</param>
         /// <param name="e">event arguments</param>
-        private void Reader_ColorFrameArrived(object sender, ColorFrameArrivedEventArgs e)
+        private void Reader_MultiSourceFrameArrived(object sender, MultiSourceFrameArrivedEventArgs e)
         {
+            bool dataReceived = false;
+            var reference = e.FrameReference.AcquireFrame();
+
+            using (BodyFrame bodyFrame = reference.BodyFrameReference.AcquireFrame())
+            {
+                if (bodyFrame != null)
+                {
+                    if (this.bodies == null)
+                    {
+                        this.bodies = new Body[bodyFrame.BodyCount];
+                    }
+
+                    // The first time GetAndRefreshBodyData is called, Kinect will allocate each Body in the array.
+                    bodyFrame.GetAndRefreshBodyData(this.bodies);
+                    dataReceived = true;
+                }
+            }
+
             // ColorFrame is IDisposable
-            using (ColorFrame colorFrame = e.FrameReference.AcquireFrame())
+            using (ColorFrame colorFrame = reference.ColorFrameReference.AcquireFrame())
             {
                 if (colorFrame != null)
                 {
@@ -168,30 +165,6 @@
                 }
             }
 
-        }
-
-        /// Handles the body frame data arriving from the sensor
-        /// <param name="sender">object sending the event</param>
-        /// <param name="e">event arguments</param>
-        private void Reader_FrameArrived(object sender, BodyFrameArrivedEventArgs e)
-        {
-            bool dataReceived = false;
-
-            using (BodyFrame bodyFrame = e.FrameReference.AcquireFrame())
-            {
-                if (bodyFrame != null)
-                {
-                    if (this.bodies == null)
-                    {
-                        this.bodies = new Body[bodyFrame.BodyCount];
-                    }
-
-                    // The first time GetAndRefreshBodyData is called, Kinect will allocate each Body in the array.
-                    bodyFrame.GetAndRefreshBodyData(this.bodies);
-                    dataReceived = true;
-                }
-            }
-
             if (dataReceived)
             {
                 foreach (Body body in this.bodies)
@@ -202,9 +175,10 @@
                         EvaluateTheGaitSpeedTest(joints);
                         break;
                     }
-      
+
                 }
             }
+
         }
 
         private void EvaluateTheGaitSpeedTest(IReadOnlyDictionary<JointType, Joint> joints)
