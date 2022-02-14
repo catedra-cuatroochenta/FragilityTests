@@ -280,11 +280,7 @@
                 streamWriter.WriteLine("Distance Walked (m);" + (startLine - endLine));
                 streamWriter.WriteLine("Walking Time(s);" + walkingTime);
                 streamWriter.WriteLine("Walking Speed(m/s);" + (startLine - endLine) / walkingTime);
-                streamWriter.WriteLine("Instant" + ";" + "Head Pos" + ";" +
-                    "Spine Shoulder Pos" + ";" + "Mid Spine Pos" + ";" + "Spine Base Pos" + ";" +
-                    "Right Knee Pos" + ";" + "Left Knee Pos" + ";" +
-                    "Rigth Foot Pos" + ";" + "Left Foot Pos");
-                streamWriter.WriteLine(bodyJointsPosition.ToStringXAxisValues());
+                streamWriter.WriteLine(bodyJointsPosition.ToCsv());
                 streamWriter.WriteLine("\n");
                 streamWriter.Flush();
             }
