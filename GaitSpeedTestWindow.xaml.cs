@@ -316,11 +316,7 @@
                 streamWriter.WriteLine("Distance Walked (m);" + (startLine - endLine));
                 streamWriter.WriteLine("Walking Time(s);" + walkingTime);
                 streamWriter.WriteLine("Walking Speed(m/s);" + (startLine - endLine) / walkingTime);
-                streamWriter.WriteLine("Instant" + ";" + "Head Depth" + ";" +
-                    "Spine Shoulder Depth" + ";" + "Mid Spine Depth" + ";" + "Spine Base Depth" + ";" +
-                    "Right Knee Depth" + ";" + "Left Knee Depth" + ";" +
-                    "Rigth Foot Depth" + ";" + "Left Foot Depth");
-                streamWriter.WriteLine(bodyJointsPosition.ToStringDepthValues());
+                streamWriter.WriteLine(bodyJointsPosition.ToCsv());
                 streamWriter.WriteLine("\n");
                 streamWriter.Flush();
             }

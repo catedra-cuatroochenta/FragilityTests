@@ -1,74 +1,81 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using Microsoft.Kinect;
 
 namespace FragilityTests
 {
     public class BodyJointsPosition
     {
-        Dictionary<float, float[]> depthBodyJoints;
-        Dictionary<float, float[]> xAxisBodyJoints;
+
+        private Dictionary<float, float[]> xAxisBodyJointsPos;
+        private Dictionary<float, float[]> yAxisBodyJointsPos;
+        private Dictionary<float, float[]> zAxisBodyJointsPos;
 
         public BodyJointsPosition()
         {
-            this.depthBodyJoints = new Dictionary<float, float[]>();
-            this.xAxisBodyJoints = new Dictionary<float, float[]>();
+            this.xAxisBodyJointsPos = new Dictionary<float, float[]>();
+            this.yAxisBodyJointsPos = new Dictionary<float, float[]>();
+            this.zAxisBodyJointsPos = new Dictionary<float, float[]>();
+
         }
 
         public void AddBodyStatus(float instant, IReadOnlyDictionary<JointType, Joint> joints)
         {
-            float[] jointsDepth = new float[8];
-            jointsDepth[0] = joints[JointType.Head].Position.Z;
-            jointsDepth[1] = joints[JointType.SpineShoulder].Position.Z;
-            jointsDepth[2] = joints[JointType.SpineMid].Position.Z;
-            jointsDepth[3] = joints[JointType.SpineBase].Position.Z;
-            jointsDepth[4] = joints[JointType.KneeRight].Position.Z;
-            jointsDepth[5] = joints[JointType.KneeLeft].Position.Z;
-            jointsDepth[6] = joints[JointType.FootRight].Position.Z;
-            jointsDepth[7] = joints[JointType.FootLeft].Position.Z;
+            float[] xValues = new float[25];
+            float[] yValues = new float[25];
+            float[] zValues = new float[25];
+            int i = 0;
 
-            this.depthBodyJoints.Add(instant, jointsDepth);
+            foreach (JointType jointType in joints.Keys)
+            {
+                Joint joint = joints[jointType];
+                xValues[i] = joint.Position.X;
+                yValues[i] = joint.Position.Y;
+                zValues[i] = joint.Position.Z;
+                i++;
+            }
 
-            float[] jointsxValues = new float[8];
-            jointsxValues[0] = joints[JointType.Head].Position.X;
-            jointsxValues[1] = joints[JointType.SpineShoulder].Position.X;
-            jointsxValues[2] = joints[JointType.SpineMid].Position.X;
-            jointsxValues[3] = joints[JointType.SpineBase].Position.X;
-            jointsxValues[4] = joints[JointType.KneeRight].Position.X;
-            jointsxValues[5] = joints[JointType.KneeLeft].Position.X;
-            jointsxValues[6] = joints[JointType.FootRight].Position.X;
-            jointsxValues[7] = joints[JointType.FootLeft].Position.X;
-
-            this.xAxisBodyJoints.Add(instant, jointsxValues);
+            this.xAxisBodyJointsPos.Add(instant, xValues);
+            this.yAxisBodyJointsPos.Add(instant, yValues);
+            this.zAxisBodyJointsPos.Add(instant, zValues);
         }
 
         public void ClearBodyStatus()
         {
-            this.depthBodyJoints.Clear();
-            this.xAxisBodyJoints.Clear();
+            this.xAxisBodyJointsPos.Clear();
+            this.yAxisBodyJointsPos.Clear();
+            this.zAxisBodyJointsPos.Clear();
+
         }
 
-
-        public String ToStringDepthValues()
+        public string ToCsv()
         {
+
             string result = string.Empty;
-            foreach (KeyValuePair<float, float[]> kvp in depthBodyJoints)
+            foreach (KeyValuePair<float, float[]> kvp in xAxisBodyJointsPos)
             {
-                string depthValues = string.Empty;
-                foreach (float depth in kvp.Value)
+                string xAxisValues = string.Empty;
+                foreach (float xAxisPos in kvp.Value)
                 {
-                    depthValues += (depth + ";");
+                    xAxisValues += (xAxisPos + ";");
                 }
-                result += string.Format("{0};{1}\n", kvp.Key, depthValues);
+                result += string.Format("{0};{1}\n", kvp.Key, xAxisValues);
             }
-            return result;
+            result += "\n";
+            
+            foreach (KeyValuePair<float, float[]> kvp in yAxisBodyJointsPos)
+            {
+                string xAxisValues = string.Empty;
+                foreach (float xAxisPos in kvp.Value)
+                {
+                    xAxisValues += (xAxisPos + ";");
+                }
+                result += string.Format("{0};{1}\n", kvp.Key, xAxisValues);
+            }
+            result += "\n";
 
-        }
-
-        public String ToStringXAxisValues()
-        {
-            string result = string.Empty;
-            foreach (KeyValuePair<float, float[]> kvp in xAxisBodyJoints)
+            foreach (KeyValuePair<float, float[]> kvp in zAxisBodyJointsPos)
             {
                 string xAxisValues = string.Empty;
                 foreach (float xAxisPos in kvp.Value)
@@ -78,8 +85,10 @@ namespace FragilityTests
                 result += string.Format("{0};{1}\n", kvp.Key, xAxisValues);
             }
             return result;
-
+            
         }
+
+
 
     }
 

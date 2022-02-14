@@ -37,12 +37,14 @@
 
         private BodyJointsPosition bodyJointsPosition;
 
-        private int isUprightConfidence = 0; // Max confidence = 5, Min confidence = 0
+        private int isUprightConfidence = 0; // Max confidence = 3, Min confidence = 0
+
+        private int maxUprightConfidence = 3;
 
         private bool alreadyUpright = false;
 
         private int squats = 0;
-
+        
         private StreamWriter streamWriter = new StreamWriter("Results.csv");
 
         private const string initStatus = "Inicio";
@@ -187,7 +189,8 @@
             
 
             // Si se encuentra en posición de empezar el test
-            if (!testIsRunning && BodyIsSeated(leftKneeDegree, rightKneeDegree)
+            if (!testIsRunning && !isOnCountdown &&
+                BodyIsSeated(leftKneeDegree, rightKneeDegree)
                 && BodyInStartingPosition(joints))
             {
                 isOnCountdown = true;
@@ -202,8 +205,8 @@
                 testIsRunning = true;
                 stopWatch.Restart();
                 UpdateTestTime();
-                // TODO: Store data
                 UpdateTestStatus(transitionStatus);
+                bodyJointsPosition.AddBodyStatus(testTime, joints);
             }
 
             else if (isOnCountdown)
@@ -214,7 +217,7 @@
             else if (testIsRunning)
             {
                 UpdateTestTime();
-                // TODO: Store data
+                bodyJointsPosition.AddBodyStatus(testTime, joints);
 
                 // Si se acaba de poner en pie
                 if (BodyIsUpright(rightKneeDegree, leftKneeDegree) && !alreadyUpright)
@@ -227,6 +230,7 @@
                         isOnCountdown = false;
                         stopWatch.Stop();
                         UpdateTestStatus(endStatus);
+                        StoreResultsOnFile();
                     }
                 }
 
@@ -253,9 +257,9 @@
         private bool BodyIsUpright(float rightKneeDegrees, float leftKneeDegrees)
         {
             if (rightKneeDegrees > 165f && leftKneeDegrees > 165f
-                && isUprightConfidence < 5) isUprightConfidence++;
+                && isUprightConfidence < maxUprightConfidence) isUprightConfidence++;
             
-            if (isUprightConfidence == 5) return true;
+            if (isUprightConfidence == maxUprightConfidence) return true;
             return false;
         }
 
@@ -339,5 +343,22 @@
             return false; 
         }
 
+        private void StoreResultsOnFile()
+        {
+            try
+            {
+                streamWriter.WriteLine("Test;" + "Get Up Test");
+                streamWriter.WriteLine("Date;" + DateTime.Now.ToString());
+                streamWriter.WriteLine("Squats;" + squats);
+                streamWriter.WriteLine("Test Time(s);" + testTime);
+                streamWriter.WriteLine(bodyJointsPosition.ToCsv());
+                streamWriter.WriteLine("\n");
+                streamWriter.Flush();
+            }
+            catch (Exception e)
+            {
+                UpdateTestStatus(errorStatus);
+            }
+        }
     }
 }
