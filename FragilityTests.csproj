@@ -56,7 +56,11 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="BodyJointsPosition.cs" />
+    <Compile Include="FrailtyTests\BodyJointsPosition.cs" />
+    <Compile Include="FrailtyTests\FrailtyTest.cs" />
+    <Compile Include="FrailtyTests\FrailtyTestType.cs" />
+    <Compile Include="FrailtyTests\GaitSpeedTest.cs" />
+    <Compile Include="FrailtyTests\GetUpTest.cs" />
     <Compile Include="GaitSpeedTestWindow.xaml.cs">
       <DependentUpon>GaitSpeedTestWindow.xaml</DependentUpon>
     </Compile>
@@ -89,6 +93,7 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FrailtyTests\PerpendicularGaitSpeedTest.cs" />
     <Compile Include="PerpendicularGaitSpeedTestWindow.xaml.cs">
       <DependentUpon>PerpendicularGaitSpeedTestWindow.xaml</DependentUpon>
     </Compile>
@@ -127,5 +132,6 @@
   <ItemGroup>
     <Resource Include="Images\Kinect.png" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

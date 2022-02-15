@@ -9,8 +9,9 @@
     using Microsoft.Kinect;
     using System.IO;
     using System;
-    
-    
+    using FragilityTests.FrailtyTests;
+
+
     /// <summary>
     /// Lógica de interacción para GetUpTestWindow.xaml
     /// </summary>
@@ -27,38 +28,7 @@
 
         private Body[] bodies = null;
 
-        private float testTime = 0f;
-
-        private Stopwatch stopWatch = null;
-
-        private bool testIsRunning = false;
-
-        private bool isOnCountdown = false;
-
-        private BodyJointsPosition bodyJointsPosition;
-
-        private int isUprightConfidence = 0; // Max confidence = 3, Min confidence = 0
-
-        private int maxUprightConfidence = 3;
-
-        private bool alreadyUpright = false;
-
-        private int squats = 0;
-        
-        private StreamWriter streamWriter = new StreamWriter("Results.csv");
-
-        private const string initStatus = "Inicio";
-
-        private const string countdownStatus = "Empieza la cuenta atrás";
-
-        private const string transitionStatus = "Continue";
-
-        private const string endStatus = "Fin";
-
-        private const string errorStatus = "¡Ups! Ha ocurrido algún problema, pruebe a reiniciar el sistema.";
-
-        private const string outOfRangeStatus = "Se encuentra demasiado alejado, acérquese a la cámara.";
-
+        private FrailtyTest frailtyTest;
 
         public GetUpTestWindow()
         {
@@ -74,14 +44,11 @@
 
             DataContext = this;
 
-            bodyJointsPosition = new BodyJointsPosition();
-
-            stopWatch = Stopwatch.StartNew();
-            stopWatch.Reset();
+            frailtyTest = new GetUpTest();
 
             InitializeComponent();
 
-            UpdateTestStatus(initStatus);
+            UpdateTestStatus();
         }
 
         /// Gets the bitmap to display
@@ -110,11 +77,7 @@
                 this.kinectSensor = null;
             }
 
-            if (this.streamWriter != null)
-            {
-                streamWriter.Close();
-                streamWriter = null;
-            }
+            frailtyTest.CloseStreamWriter();
         }
 
         /// Handles the body frame data and color frame data arriving from the sensor
@@ -184,181 +147,25 @@
 
         private void EvaluateTheGetUpTest(IReadOnlyDictionary<JointType, Joint> joints)
         {
-            float rightKneeDegree = GetThreeJointsDegree(joints[JointType.HipRight], joints[JointType.KneeRight], joints[JointType.AnkleRight]);
-            float leftKneeDegree = GetThreeJointsDegree(joints[JointType.HipLeft], joints[JointType.KneeLeft], joints[JointType.AnkleLeft]);
-            
-
-            // Si se encuentra en posición de empezar el test
-            if (!testIsRunning && !isOnCountdown &&
-                BodyIsSeated(leftKneeDegree, rightKneeDegree)
-                && BodyInStartingPosition(joints))
-            {
-                isOnCountdown = true;
-                testIsRunning = false;
-                stopWatch.Start();
-                UpdateTestStatus(countdownStatus);
-            }
-
-            else if (isOnCountdown && testTime >= 3f)
-            {
-                isOnCountdown = false;
-                testIsRunning = true;
-                stopWatch.Restart();
-                UpdateTestTime();
-                UpdateTestStatus(transitionStatus);
-                bodyJointsPosition.AddBodyStatus(testTime, joints);
-            }
-
-            else if (isOnCountdown)
-            {
-                UpdateTestTime();
-            }
-
-            else if (testIsRunning)
-            {
-                UpdateTestTime();
-                bodyJointsPosition.AddBodyStatus(testTime, joints);
-
-                // Si se acaba de poner en pie
-                if (BodyIsUpright(rightKneeDegree, leftKneeDegree) && !alreadyUpright)
-                {
-                    alreadyUpright = true;
-                    squats++;
-                    if (squats == 5)
-                    {
-                        testIsRunning = false;
-                        isOnCountdown = false;
-                        stopWatch.Stop();
-                        UpdateTestStatus(endStatus);
-                        StoreResultsOnFile();
-                    }
-                }
-
-                // Si se acaba de sentar
-                else if (BodyIsSeated(rightKneeDegree, leftKneeDegree) && alreadyUpright)
-                {
-                    alreadyUpright = false;
-                }
-            }
-
-            DisplayDebugValues(rightKneeDegree, leftKneeDegree);
+            frailtyTest.EvaluateFrailtyTest(joints);
+            DisplayDebugValues();
+            UpdateTestStatus();
         }
 
-        private bool BodyIsSeated(float rightKneeDegrees, float leftKneeDegrees)
+        private void DisplayDebugValues()
         {
-            if (rightKneeDegrees <= 95f && leftKneeDegrees <= 95f)
-            {
-                if (isUprightConfidence > 0) isUprightConfidence--;
-                return true;
-            }
-            return false;
-        }
-        
-        private bool BodyIsUpright(float rightKneeDegrees, float leftKneeDegrees)
-        {
-            if (rightKneeDegrees > 165f && leftKneeDegrees > 165f
-                && isUprightConfidence < maxUprightConfidence) isUprightConfidence++;
-            
-            if (isUprightConfidence == maxUprightConfidence) return true;
-            return false;
+            string[] debugValues = frailtyTest.GetDebugValues();
+            TestTime.Text = "Tiempo: " + debugValues[0];
+            RightKneeDegrees.Text = "Grados rodilla derecha: " + debugValues[1];
+            LeftKneeDegrees.Text = "Grados rodilla izquierda: " + debugValues[2];
+            UprightConfidence.Text = "Upright Confidence: " + debugValues[3];
+            SquatRep.Text = "Sentadillas: " + debugValues[4];
         }
 
-        private float GetThreeJointsDegree(Joint jointA, Joint jointB, Joint jointC)
+        private void UpdateTestStatus()
         {
-            float[] vectorA = GetVector(jointB, jointA);
-            float[] vectorB = GetVector(jointB, jointC);
-
-            float scalarProduct = GetScalarProduct(vectorA, vectorB);
-
-            double vectorNormA = GetVectorNorm(vectorA);
-            double vectorNormB = GetVectorNorm(vectorB);
-
-            double radians = Math.Acos(scalarProduct / (vectorNormA * vectorNormB));
-            return (float) (radians * 180 / Math.PI);
-        }
-
-        private double GetVectorNorm(float[] vector)
-        {
-            float norm = 0;
-            for (int i = 0; i < vector.Length; i++)
-            {
-                norm += vector[i] * vector[i];
-            }
-            return Math.Sqrt(norm);
-        }
-
-        private float GetScalarProduct(float[] vectorA, float[] vectorB)
-        {
-            float scalarProduct = 0;
-            for(int i = 0; i <  vectorA.Length; i++)
-            {
-                scalarProduct += vectorA[i] * vectorB[i];
-            }
-            return scalarProduct;
-        }
-
-        private float[] GetVector(Joint pointA, Joint pointB)
-        {
-            float[] vector = new float[3];
-            vector[0] = pointB.Position.X - pointA.Position.X;
-            vector[1] = pointB.Position.Y - pointA.Position.Y;
-            vector[2] = pointB.Position.Z - pointA.Position.Z;
-            return vector;
-        }
-
-        private void DisplayDebugValues(float rightKneeDegrees, float leftKneeDegrees)
-        {
-            TestTime.Text = "Tiempo: " + this.testTime.ToString();
-            RightKneeDegrees.Text = "Grados rodilla derecha: " + rightKneeDegrees;
-            LeftKneeDegrees.Text = "Grados rodilla izquierda: " + leftKneeDegrees;
-            UprightConfidence.Text = "Upright Confidence: " + isUprightConfidence;
-            SquatRep.Text = "Sentadillas: " + squats;
-        }
-
-        private void UpdateTestTime()
-        {
-            //Store the time on walkingTime var
-            if (stopWatch != null)
-            {
-                var elapsedMillis = stopWatch.ElapsedMilliseconds;
-                testTime = elapsedMillis / 1000f;
-            }
-            else
-            {
-                testTime = 0;
-            }
-        }
-
-        private void UpdateTestStatus(string newStatus)
-        {
-            StatusTest.Text = newStatus;
-        }
-
-        private bool BodyInStartingPosition(IReadOnlyDictionary<JointType, Joint> joints)
-        {
-            float leftHandHeight = joints[JointType.HandLeft].Position.Y;
-            float rightHandHeight = joints[JointType.HandRight].Position.Y;
-            float headHeight = joints[JointType.Head].Position.Y;
-            if (leftHandHeight >= headHeight && rightHandHeight >= headHeight) return true;
-            return false; 
-        }
-
-        private void StoreResultsOnFile()
-        {
-            try
-            {
-                streamWriter.WriteLine("Test;" + "Get Up Test");
-                streamWriter.WriteLine("Date;" + DateTime.Now.ToString());
-                streamWriter.WriteLine("Squats;" + squats);
-                streamWriter.WriteLine("Test Time(s);" + testTime);
-                streamWriter.WriteLine(bodyJointsPosition.ToCsv());
-                streamWriter.WriteLine("\n");
-                streamWriter.Flush();
-            }
-            catch (Exception e)
-            {
-                UpdateTestStatus(errorStatus);
-            }
+            string currentStatus = frailtyTest.GetCurrentStatus();
+            StatusTest.Text = currentStatus;
         }
     }
 }
