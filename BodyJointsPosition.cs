@@ -5,91 +5,130 @@ using Microsoft.Kinect;
 
 namespace FragilityTests
 {
+    // Esta clase almacena los valores de las articulaciones de un Body
+    //  en un espacio tridimensional (x, y, z) en un conjunto de instantes de tiempo 
     public class BodyJointsPosition
     {
-
-        private Dictionary<float, float[]> xAxisBodyJointsPos;
-        private Dictionary<float, float[]> yAxisBodyJointsPos;
-        private Dictionary<float, float[]> zAxisBodyJointsPos;
+        // Diccionario para almacenar el estado de las articulaciones <Value>
+        //  en cada instante determinado <Key>
+        private Dictionary<float, BodyJointsOnInstant> bodyJoints;
 
         public BodyJointsPosition()
         {
-            this.xAxisBodyJointsPos = new Dictionary<float, float[]>();
-            this.yAxisBodyJointsPos = new Dictionary<float, float[]>();
-            this.zAxisBodyJointsPos = new Dictionary<float, float[]>();
-
+            this.bodyJoints = new Dictionary<float, BodyJointsOnInstant>();
         }
 
+        // Metodo para añadir las posiciones de las articulaciones de un Body
+        // en un nuevo instante de tiempo.
+        // WARNING: No se controla que la clave coincida!
         public void AddBodyStatus(float instant, IReadOnlyDictionary<JointType, Joint> joints)
         {
-            float[] xValues = new float[25];
-            float[] yValues = new float[25];
-            float[] zValues = new float[25];
-            int i = 0;
-
-            foreach (JointType jointType in joints.Keys)
-            {
-                Joint joint = joints[jointType];
-                xValues[i] = joint.Position.X;
-                yValues[i] = joint.Position.Y;
-                zValues[i] = joint.Position.Z;
-                i++;
-            }
-
-            this.xAxisBodyJointsPos.Add(instant, xValues);
-            this.yAxisBodyJointsPos.Add(instant, yValues);
-            this.zAxisBodyJointsPos.Add(instant, zValues);
+            BodyJointsOnInstant bodyJointsOnInstant = new BodyJointsOnInstant(joints);
+            this.bodyJoints.Add(instant, bodyJointsOnInstant);
         }
 
+        // Libera la memoria
         public void ClearBodyStatus()
         {
-            this.xAxisBodyJointsPos.Clear();
-            this.yAxisBodyJointsPos.Clear();
-            this.zAxisBodyJointsPos.Clear();
-
+            this.bodyJoints.Clear();
         }
 
+        // Construye una cadena csv para guardar la información en un fichero
         public string ToCsv()
         {
+            string joints = "Instant;";
+            for(int i = 0; i < 25; i++)
+            {
+                joints += ((JointType) i).ToString() + ";";
+            }
 
-            string result = string.Empty;
-            foreach (KeyValuePair<float, float[]> kvp in xAxisBodyJointsPos)
-            {
-                string xAxisValues = string.Empty;
-                foreach (float xAxisPos in kvp.Value)
-                {
-                    xAxisValues += (xAxisPos + ";");
-                }
-                result += string.Format("{0};{1}\n", kvp.Key, xAxisValues);
-            }
-            result += "\n";
-            
-            foreach (KeyValuePair<float, float[]> kvp in yAxisBodyJointsPos)
-            {
-                string xAxisValues = string.Empty;
-                foreach (float xAxisPos in kvp.Value)
-                {
-                    xAxisValues += (xAxisPos + ";");
-                }
-                result += string.Format("{0};{1}\n", kvp.Key, xAxisValues);
-            }
-            result += "\n";
+            string xValues = String.Empty;
+            string yValues = String.Empty;
+            string zValues = String.Empty;
 
-            foreach (KeyValuePair<float, float[]> kvp in zAxisBodyJointsPos)
+            BodyJointsOnInstant bodyJointsOnInstant;
+
+            foreach (float instant in bodyJoints.Keys)
             {
-                string xAxisValues = string.Empty;
-                foreach (float xAxisPos in kvp.Value)
-                {
-                    xAxisValues += (xAxisPos + ";");
-                }
-                result += string.Format("{0};{1}\n", kvp.Key, xAxisValues);
+                bodyJointsOnInstant = this.bodyJoints[instant];
+                xValues += instant + ";" + bodyJointsOnInstant.GetXJointsValuesInCsv() + "\n";
+                yValues += instant + ";" + bodyJointsOnInstant.GetYJointsValuesInCsv() + "\n";
+                zValues += instant + ";" + bodyJointsOnInstant.GetZJointsValuesInCsv() + "\n";
             }
+            string result = "X Values" + "\n";
+            result += joints + "\n" + xValues;
+            result += "Y Values" + "\n";
+            result += joints + "\n" + yValues;
+            result += "Z Values" + "\n";
+            result += joints + "\n" + zValues;
             return result;
             
         }
 
+    }
 
+    // Esta clase define la posicion de todas las articulaciones de un Body
+    //  en un espacio tridimensional (x, y, z) de un instante determinado
+    public class BodyJointsOnInstant
+    {
+        // Total de articulaciones con las que trabaja la kinect v2 
+        const int numberOfJoints = 25;  
+        
+        // Valores de todas las articulaciones con respecto al eje X
+        private float[] xJointsValues;
 
+        // Valores de todas las articulaciones con respecto al eje Y
+        private float[] yJointsValues;
+
+        // Valores de todas las articulaciones con respecto al eje Z
+        private float[] zJointsValues;
+
+        public BodyJointsOnInstant(IReadOnlyDictionary<JointType, Joint> joints)
+        {
+            this.xJointsValues = new float[numberOfJoints];
+            this.yJointsValues = new float[numberOfJoints];
+            this.zJointsValues = new float[numberOfJoints];
+
+            // Almacenamos en los vectores segun el orden de la enumeracion JointType
+            foreach (JointType jointType in joints.Keys)
+            {
+                Joint joint = joints[jointType];
+                this.xJointsValues[(int) jointType] = joint.Position.X;
+                this.yJointsValues[(int) jointType] = joint.Position.Y;
+                this.zJointsValues[(int) jointType] = joint.Position.Z;
+            }
+
+        }
+
+        public string GetXJointsValuesInCsv()
+        {
+            string result = string.Empty;
+            for(int i = 0; i < numberOfJoints; i++)
+            {
+                result += xJointsValues[i] + ";";
+            }
+            return result;
+        }
+
+        public string GetYJointsValuesInCsv()
+        {
+            string result = string.Empty;
+            for (int i = 0; i < numberOfJoints; i++)
+            {
+                result += yJointsValues[i] + ";";
+            }
+            return result;
+        }
+
+        public string GetZJointsValuesInCsv()
+        {
+            string result = string.Empty;
+            for (int i = 0; i < numberOfJoints; i++)
+            {
+                result += zJointsValues[i] + ";";
+            }
+            return result;
+        }
     }
 
 }
