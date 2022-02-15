@@ -17,7 +17,7 @@
         private KinectSensor kinectSensor = null;
 
         /// kinect reader for color, depth, body, etc, frames
-        MultiSourceFrameReader reader;
+        private MultiSourceFrameReader reader;
 
         /// Bitmap to display
         private WriteableBitmap colorBitmap = null;
