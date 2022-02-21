@@ -1,4 +1,5 @@
-﻿using Microsoft.Kinect;
+﻿using FragilityTests.DataTest;
+using Microsoft.Kinect;
 using System;
 using System.Collections.Generic;
 
@@ -46,46 +47,46 @@ namespace FragilityTests.FrailtyTests
             bodyDepth = GetBodyDepth(joints);
 
             /// Si completa el test
-            if (BodyInEndZone(bodyDepth) && testIsRunning)
+            if (BodyInEndZone() && testIsRunning)
             {
                 stopWatch.Stop();
                 UpdateWalkingTime();
                 testIsRunning = false;
-                bodyJointsPosition.AddBodyStatus(walkingTime, joints);
-                SaveOnFileTestResult();
-                bodyJointsPosition.ClearBodyStatus();
+                dtManager.RegisterBodyStatus(walkingTime, joints);
+                TestResult testResult = new GaitSpeedTestResult("Miguel", DateTime.Now.ToString(), walkingTime, startLine - endLine);
+                dtManager.EndTest(validTest:true, testResult);
                 currentStatus = endStatus;
             }
 
             /// Si esta en medio del test
-            else if (BodyInTransitionZone(bodyDepth) && testIsRunning)
+            else if (BodyInTransitionZone() && testIsRunning)
             {
                 UpdateWalkingTime();
-                bodyJointsPosition.AddBodyStatus(walkingTime, joints);
+                dtManager.RegisterBodyStatus(walkingTime, joints);
             }
 
             /// Si acaba de empezar el test
-            else if (BodyInTransitionZone(bodyDepth) && wasInStartZone)
+            else if (BodyInTransitionZone() && wasInStartZone)
             {
                 stopWatch.Start();
                 UpdateWalkingTime();
                 testIsRunning = true;
                 wasInStartZone = false;
-                bodyJointsPosition.AddBodyStatus(walkingTime, joints);
+                dtManager.RegisterBodyStatus(walkingTime, joints);
                 currentStatus = transitionStatus;
             }
             /// Si estaba haciendo el test pero vuelve a empezar
-            else if (BodyInStartZone(bodyDepth) && testIsRunning)
+            else if (BodyInStartZone() && testIsRunning)
             {
                 stopWatch.Reset();
                 UpdateWalkingTime();
                 testIsRunning = false;
                 wasInStartZone = true;
-                bodyJointsPosition.ClearBodyStatus();
+                dtManager.EndTest(validTest:false, null);
                 currentStatus = readyStatus;
             }
             /// Si esta preparado para empezar el test
-            else if (BodyInStartZone(bodyDepth) && !wasInStartZone)
+            else if (BodyInStartZone() && !wasInStartZone)
             {
                 stopWatch.Reset();
                 UpdateWalkingTime();
@@ -106,25 +107,6 @@ namespace FragilityTests.FrailtyTests
             debugValues[1] = bodyTooFar.ToString();
             debugValues [2] = walkingTime.ToString();
             return debugValues;
-        }
-
-        public override void SaveOnFileTestResult()
-        {
-            try
-            {
-                streamWriter.WriteLine("Test;" + "Gait Speed Test");
-                streamWriter.WriteLine("Date;" + DateTime.Now.ToString());
-                streamWriter.WriteLine("Distance Walked (m);" + (startLine - endLine));
-                streamWriter.WriteLine("Walking Time(s);" + walkingTime);
-                streamWriter.WriteLine("Walking Speed(m/s);" + (startLine - endLine) / walkingTime);
-                streamWriter.WriteLine(bodyJointsPosition.ToCsv());
-                streamWriter.WriteLine("\n");
-                streamWriter.Flush();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-            }
         }
 
         private float GetBodyDepth(IReadOnlyDictionary<JointType, Joint> joints)
@@ -186,17 +168,17 @@ namespace FragilityTests.FrailtyTests
             }
         }
 
-        private bool BodyInEndZone(float bodyDepth)
+        private bool BodyInEndZone()
         {
             return (bodyDepth < endLine);
         }
 
-        private bool BodyInTransitionZone(float bodyDepth)
+        private bool BodyInTransitionZone()
         {
             return (bodyDepth > endLine && bodyDepth < startLine);
         }
 
-        private bool BodyInStartZone(float bodyDepth)
+        private bool BodyInStartZone()
         {
             return (bodyDepth > startLine);
         }

@@ -8,8 +8,6 @@
     using System.Windows.Media;
     using System.Windows.Media.Imaging;
     using Microsoft.Kinect;
-    using System.IO;
-    using System;
     using FragilityTests.FrailtyTests;
 
     public partial class GaitSpeedTestWindow : Window
@@ -76,7 +74,7 @@
                 this.kinectSensor = null;
             }
 
-            frailtyTest.CloseStreamWriter();
+            frailtyTest.Close();
 
         }
 
