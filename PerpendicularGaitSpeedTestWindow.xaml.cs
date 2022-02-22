@@ -70,7 +70,7 @@
                 this.kinectSensor = null;
             }
 
-            frailtyTest.CloseStreamWriter();
+            frailtyTest.Close();
 
         }
 

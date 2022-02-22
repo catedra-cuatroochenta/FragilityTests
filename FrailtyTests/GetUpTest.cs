@@ -1,4 +1,5 @@
-﻿using Microsoft.Kinect;
+﻿using FragilityTests.DataTest;
+using Microsoft.Kinect;
 using System;
 using System.Collections.Generic;
 
@@ -14,7 +15,7 @@ namespace FragilityTests.FrailtyTests
 
         private int isUprightConfidence = 0; // Max confidence = 3, Min confidence = 0
 
-        private int maxUprightConfidence = 3;
+        private int maxUprightConfidence = 2;
 
         private bool alreadyUpright = false;
 
@@ -65,7 +66,7 @@ namespace FragilityTests.FrailtyTests
                 stopWatch.Restart();
                 UpdateTestTime();
                 currentStatus = transitionStatus;
-                bodyJointsPosition.AddBodyStatus(testTime, joints);
+                dtManager.RegisterBodyStatus(testTime, joints);
             }
 
             // Si está en la cuenta atrás
@@ -78,7 +79,7 @@ namespace FragilityTests.FrailtyTests
             else if (testIsRunning)
             {
                 UpdateTestTime();
-                bodyJointsPosition.AddBodyStatus(testTime, joints);
+                dtManager.RegisterBodyStatus(testTime, joints);
 
                 // Si se acaba de poner en pie
                 if (BodyIsUpright() && !alreadyUpright)
@@ -91,8 +92,9 @@ namespace FragilityTests.FrailtyTests
                         isOnCountdown = false;
                         stopWatch.Stop();
                         currentStatus = endStatus;
-                        SaveOnFileTestResult();
-                        bodyJointsPosition.ClearBodyStatus();
+                        TestResult testResult = new GetUpTestResult("Miguel", DateTime.Now.ToString(), testTime, squats);
+                        
+                        dtManager.EndTest(validTest:true, testResult);
                     }
                 }
 
@@ -120,27 +122,10 @@ namespace FragilityTests.FrailtyTests
             return debugValues;
         }
 
-        public override void SaveOnFileTestResult()
-        {
-            try
-            {
-                streamWriter.WriteLine("Test;" + "Get Up Test");
-                streamWriter.WriteLine("Date;" + DateTime.Now.ToString());
-                streamWriter.WriteLine("Squats;" + squats);
-                streamWriter.WriteLine("Test Time(s);" + testTime);
-                streamWriter.WriteLine(bodyJointsPosition.ToCsv());
-                streamWriter.WriteLine("\n");
-                streamWriter.Flush();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-            }
-        }
-
+ 
         private bool BodyIsSeated()
         {
-            if (rightKneeDegree <= 95f && leftKneeDegree <= 95f)
+            if (rightKneeDegree <= 105f && leftKneeDegree <= 105f)
             {
                 if (isUprightConfidence > 0) isUprightConfidence--;
                 return true;
@@ -150,7 +135,7 @@ namespace FragilityTests.FrailtyTests
 
         private bool BodyIsUpright()
         {
-            if (rightKneeDegree > 165f && leftKneeDegree > 165f
+            if (rightKneeDegree > 150f && leftKneeDegree > 150f
                 && isUprightConfidence < maxUprightConfidence) isUprightConfidence++;
 
             if (isUprightConfidence == maxUprightConfidence) return true;

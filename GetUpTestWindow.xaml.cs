@@ -7,8 +7,6 @@
     using System.Windows.Media;
     using System.Windows.Media.Imaging;
     using Microsoft.Kinect;
-    using System.IO;
-    using System;
     using FragilityTests.FrailtyTests;
 
 
@@ -41,7 +39,8 @@
 
             FrameDescription colorFrameDescription = this.kinectSensor.ColorFrameSource.CreateFrameDescription(ColorImageFormat.Bgra);
             colorBitmap = new WriteableBitmap(colorFrameDescription.Width, colorFrameDescription.Height, 96.0, 96.0, PixelFormats.Bgr32, null);
-
+            
+            
             DataContext = this;
 
             frailtyTest = new GetUpTest();
@@ -77,7 +76,7 @@
                 this.kinectSensor = null;
             }
 
-            frailtyTest.CloseStreamWriter();
+            frailtyTest.Close();
         }
 
         /// Handles the body frame data and color frame data arriving from the sensor

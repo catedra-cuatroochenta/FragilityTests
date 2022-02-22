@@ -1,5 +1,6 @@
 ﻿namespace FragilityTests
 {
+    using FragilityTests.DataTest;
     using Microsoft.Kinect;
     using System;
     using System.Collections.Generic;
@@ -9,9 +10,9 @@
     public class PerpendicularGaitSpeedTest : FrailtyTest
     {
 
-        public const float startLine = 2.0f;   // Ideal: 2f
+        public const float startLine = 1.5f;   // Ideal: 2f
 
-        public const float endLine = -2.0f;     // Ideal: -2f
+        public const float endLine = -1.5f;     // Ideal: -2f
 
         private float walkingTime;
         
@@ -52,44 +53,44 @@
             /// Si completa el test
             if (BodyInEndZone() && testIsRunning)
             {
-                base.stopWatch.Stop();
+                stopWatch.Stop();
                 UpdateWalkingTime();
                 testIsRunning = false;
-                base.bodyJointsPosition.AddBodyStatus(walkingTime, joints);
-                SaveOnFileTestResult();
-                base.bodyJointsPosition.ClearBodyStatus();
+                dtManager.RegisterBodyStatus(walkingTime, joints);
+                TestResult testResult = new GaitSpeedTestResult("Miguel", DateTime.Now.ToString(), walkingTime, startLine - endLine);
+                dtManager.EndTest(validTest:true, testResult);
                 currentStatus = endStatus;
             }
             /// Si esta en medio del test
             else if (BodyInTransitionZone() && testIsRunning)
             {
                 UpdateWalkingTime();
-                bodyJointsPosition.AddBodyStatus(walkingTime, joints);
+                dtManager.RegisterBodyStatus(walkingTime, joints);
             }
             /// Si acaba de empezar el test
             else if (BodyInTransitionZone() && wasInStartZone)
             {
-                base.stopWatch.Start();
+                stopWatch.Start();
                 UpdateWalkingTime();
                 testIsRunning = true;
                 wasInStartZone = false;
-                base.bodyJointsPosition.AddBodyStatus(walkingTime, joints);
+                dtManager.RegisterBodyStatus(walkingTime, joints);
                 currentStatus = transitionStatus;
             }
             /// Si estaba haciendo el test pero vuelve a empezar
             else if (BodyInStartZone() && testIsRunning)
             {
-                base.stopWatch.Reset();
+                stopWatch.Reset();
                 UpdateWalkingTime();
                 testIsRunning = false;
                 wasInStartZone = true;
-                base.bodyJointsPosition.ClearBodyStatus();
+                dtManager.EndTest(validTest:false, null);
                 currentStatus = readyStatus;
             }
             /// Si esta preparado para empezar el test
             else if (BodyInStartZone() && !wasInStartZone)
             {
-                base.stopWatch.Reset();
+                stopWatch.Reset();
                 UpdateWalkingTime();
                 wasInStartZone = true;
                 currentStatus = readyStatus;
@@ -110,25 +111,6 @@
             return debugValues;
         }
        
-        public override void SaveOnFileTestResult()
-        {
-            try
-            {
-                base.streamWriter.WriteLine("Test;" + "Perpendicular Gait Speed Test");
-                base.streamWriter.WriteLine("Date;" + DateTime.Now.ToString());
-                base.streamWriter.WriteLine("Distance Walked (m);" + (startLine - endLine));
-                base.streamWriter.WriteLine("Walking Time(s);" + walkingTime);
-                base.streamWriter.WriteLine("Walking Speed(m/s);" + (startLine - endLine) / walkingTime);
-                base.streamWriter.WriteLine(bodyJointsPosition.ToCsv());
-                base.streamWriter.WriteLine("\n");
-                base.streamWriter.Flush();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-            }
-        }
-
         private float GetBodyXAxisPos(IReadOnlyDictionary<JointType, Joint> joints)
         {
             /// Inicialmente devuelvo la media

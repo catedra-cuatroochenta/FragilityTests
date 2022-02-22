@@ -56,7 +56,11 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="FrailtyTests\BodyJointsPosition.cs" />
+    <Compile Include="DataTest\DataTestManager.cs" />
+    <Compile Include="DataTest\GaitSpeedTestResult.cs" />
+    <Compile Include="DataTest\GetUpTestResult.cs" />
+    <Compile Include="DataTest\TestResult.cs" />
+    <Compile Include="DataTest\BodyJointsOnInstant.cs" />
     <Compile Include="FrailtyTests\FrailtyTest.cs" />
     <Compile Include="FrailtyTests\FrailtyTestType.cs" />
     <Compile Include="FrailtyTests\GaitSpeedTest.cs" />
