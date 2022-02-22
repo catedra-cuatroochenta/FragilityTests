@@ -54,6 +54,7 @@ namespace FragilityTests.FrailtyTests
                 isOnCountdown = true;
                 testIsRunning = false;
                 stopWatch.Restart();
+                UpdateTestTime();
                 currentStatus = countdownStatus;
             }
 
@@ -93,7 +94,6 @@ namespace FragilityTests.FrailtyTests
                         stopWatch.Stop();
                         currentStatus = endStatus;
                         TestResult testResult = new GetUpTestResult("Miguel", DateTime.Now.ToString(), testTime, squats);
-                        
                         dtManager.EndTest(validTest:true, testResult);
                     }
                 }
