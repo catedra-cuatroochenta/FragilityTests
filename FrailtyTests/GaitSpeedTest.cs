@@ -7,7 +7,7 @@ namespace FragilityTests.FrailtyTests
 {
     public class GaitSpeedTest : FrailtyTest
     {
-        private const float startLine = 4f;   // Max: 4.3f (Ideal = 4f)
+        private const float startLine = 3f;   // Max: 4.3f (Ideal = 4f)
 
         private const float endLine = 1f;     // Min: 0.8f (Ideal = 1f)
 

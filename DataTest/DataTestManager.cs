@@ -53,7 +53,6 @@
             }
 
             this.bodyJoints.Clear();
-            this.bodyJoints = null;
         }
 
         private void WriteResultOnFile(TestResult testResult)

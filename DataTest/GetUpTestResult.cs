@@ -24,8 +24,23 @@
         }
         public override void Autocomplete()
         {
+            ComputeSquatRom();
+            ComputeSquatSpeed();
+            ComputePoints();
+        }
+
+        private void ComputeSquatRom()
+        {
             squatRom = 0.5f;
+        }
+
+        private void ComputeSquatSpeed()
+        {
             squatSpeed = time / squats;
+        }
+
+        private void ComputePoints()
+        {
             if (time < 11.20f) points = 4;
             else if (time < 13.70f) points = 3;
             else if (time < 16.70f) points = 2;
