@@ -121,7 +121,6 @@ namespace FragilityTests.FrailtyTests
             debugValues[4] = squats.ToString();
             return debugValues;
         }
-
  
         private bool BodyIsSeated()
         {

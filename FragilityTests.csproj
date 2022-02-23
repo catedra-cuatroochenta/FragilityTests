@@ -36,6 +36,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Kinect, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
+    <Reference Include="MQTTnet, Version=3.1.2.0, Culture=neutral, PublicKeyToken=b69712f52770c0a7, processorArchitecture=MSIL">
+      <HintPath>packages\MQTTnet.3.1.2\lib\net461\MQTTnet.dll</HintPath>
+    </Reference>
+    <Reference Include="MQTTnet.Extensions.ManagedClient, Version=3.1.2.0, Culture=neutral, PublicKeyToken=b69712f52770c0a7, processorArchitecture=MSIL">
+      <HintPath>packages\MQTTnet.Extensions.ManagedClient.3.1.2\lib\net461\MQTTnet.Extensions.ManagedClient.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
@@ -56,11 +62,17 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="BalanceTestWindow.xaml.cs">
+      <DependentUpon>BalanceTestWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Communication\Example.cs" />
+    <Compile Include="DataTest\BalanceTestResult.cs" />
     <Compile Include="DataTest\DataTestManager.cs" />
     <Compile Include="DataTest\GaitSpeedTestResult.cs" />
     <Compile Include="DataTest\GetUpTestResult.cs" />
     <Compile Include="DataTest\TestResult.cs" />
     <Compile Include="DataTest\BodyJointsOnInstant.cs" />
+    <Compile Include="FrailtyTests\BalanceTest.cs" />
     <Compile Include="FrailtyTests\FrailtyTest.cs" />
     <Compile Include="FrailtyTests\FrailtyTestType.cs" />
     <Compile Include="FrailtyTests\GaitSpeedTest.cs" />
@@ -68,6 +80,10 @@
     <Compile Include="GaitSpeedTestWindow.xaml.cs">
       <DependentUpon>GaitSpeedTestWindow.xaml</DependentUpon>
     </Compile>
+    <Page Include="BalanceTestWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="GetUpTestWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -118,6 +134,7 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

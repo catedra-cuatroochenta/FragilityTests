@@ -4,6 +4,8 @@
     {
         GaitSpeedTest,
         PerpendicularGaitSpeedTest,
-        GetUpTest
+        GetUpTest,
+        BalanceTest
+            
     }
 }

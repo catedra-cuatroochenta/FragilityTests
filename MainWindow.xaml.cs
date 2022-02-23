@@ -1,5 +1,8 @@
 ﻿
-using System.IO;
+using FragilityTests.Communication;
+using System;
+using System.ComponentModel;
+using System.Threading;
 using System.Windows;
 
 
@@ -8,10 +11,14 @@ namespace FragilityTests
 
     public partial class MainWindow : Window
     {
+        Thread listenerThread;
 
         public MainWindow()
         {
             InitializeComponent();
+            listenerThread = new Thread(ThreadWork.DoWork);
+            listenerThread.IsBackground = true;
+            listenerThread.Start();
         }
 
         private void GaitSpeedTestClicked(object sender, RoutedEventArgs e)
@@ -34,5 +41,19 @@ namespace FragilityTests
             this.Close();
             window.Show();
         }
+
+        private void BalanceTestClicked(object sender, RoutedEventArgs e)
+        {
+            BalanceTestWindow window = new BalanceTestWindow();
+            this.Close();
+            window.Show();
+        }
+
+        private void MainWindow_Closing(object sender, CancelEventArgs e)
+        {
+            listenerThread.Abort();
+        }
+        
+
     }
 }
