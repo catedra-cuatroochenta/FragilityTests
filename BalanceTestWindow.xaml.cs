@@ -32,7 +32,7 @@
             kinectSensor.Open();
 
             reader = kinectSensor.OpenMultiSourceFrameReader(FrameSourceTypes.Color |
-                                                        FrameSourceTypes.Body);
+                                                        FrameSourceTypes.Body); ;
             reader.MultiSourceFrameArrived += Reader_MultiSourceFrameArrived;
 
             FrameDescription colorFrameDescription = this.kinectSensor.ColorFrameSource.CreateFrameDescription(ColorImageFormat.Bgra);

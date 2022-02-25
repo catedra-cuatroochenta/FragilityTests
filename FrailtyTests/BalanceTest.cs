@@ -11,6 +11,8 @@
 
         private bool testIsRunning = false;
 
+        private int onBalanceConfidence = 0;
+
         private const string initStatus = "Colóquese a unos dos metros de la cámara y junte los pies.";
 
         private const string transitionStatus = "Mantenga el equilibrio";
@@ -33,7 +35,7 @@
                 dtManager.RegisterBodyStatus(balanceTime, joints);
             }
             // Acaba de empezar el test
-            else if (BodyInBalancePosition(joints))
+            else if (BodyInBalancePosition(joints) && !testIsRunning)
             {
                 testIsRunning = true;
                 stopWatch.Restart();
@@ -42,11 +44,23 @@
                 dtManager.RegisterBodyStatus(balanceTime, joints);
             }
 
-            // Acaba de perder el equilibrio o supera los diez segundos
-            else if ((!BodyInBalancePosition(joints) && testIsRunning) || balanceTime >= 10.0f)
+            // Acaba de perder el equilibrio 
+            else if (!BodyInBalancePosition(joints) && testIsRunning)
             {
                 testIsRunning = false;
                 stopWatch.Stop();
+                UpdateBalanceTime();
+                currentStatus = endStatus;
+                TestResult testResult = new BalanceTestResult("Miguel", DateTime.Now.ToString(), balanceTime);
+                dtManager.EndTest(validTest: true, testResult);
+            }
+            
+            // Si supera los diez segundos
+            else if (testIsRunning && balanceTime >= 10.0f)
+            {
+                testIsRunning = false;
+                stopWatch.Stop();
+                UpdateBalanceTime();
                 currentStatus = endStatus;
                 TestResult testResult = new BalanceTestResult("Miguel", DateTime.Now.ToString(), balanceTime);
                 dtManager.EndTest(validTest: true, testResult);
@@ -70,9 +84,11 @@
             Joint leftFoot = joints[JointType.FootLeft];
             Joint rightFoot = joints[JointType.FootRight];
             bool closeOnX = Math.Round(rightFoot.Position.X, 1) == Math.Round(leftFoot.Position.X, 1);
-            bool closeOnY = Math.Round(rightFoot.Position.Y, 1) == Math.Round(leftFoot.Position.Y, 1);
 
-            if (closeOnX && closeOnY) return true;
+            if (closeOnX && onBalanceConfidence < 3) onBalanceConfidence++;
+            else if ((!closeOnX) && onBalanceConfidence > 0) onBalanceConfidence--;
+
+            if (onBalanceConfidence >= 2) return true;
             return false;
         }
 
