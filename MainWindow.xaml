@@ -10,7 +10,8 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
 			<RowDefinition Height="Auto" />
-			<RowDefinition Height="Auto" />
+			<RowDefinition Height="200" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -24,19 +25,22 @@
 
         <TextBlock x:Name="MainTitle" Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Bottom"
 				 FontFamily="Segoe UI" FontSize="30" Margin="0,20,0,20">Seleccione la prueba</TextBlock>
-		
 
-		<Button x:Name="GaitSpeedTest" Click="GaitSpeedTestClicked" 
-				Grid.Row="2" Margin="20" Width="200" Height="50" FontWeight="Normal" >Test de velocidad</Button>
+        <Viewbox Grid.Row="2" HorizontalAlignment="Center">
+            <Image x:Name="QrPicture" Stretch="UniformToFill" />
+        </Viewbox>
+
+        <Button x:Name="GaitSpeedTest" Click="GaitSpeedTestClicked" 
+				Grid.Row="3" Margin="20" Width="200" Height="50" FontWeight="Normal" >Test de velocidad</Button>
 
         <Button x:Name="PerpendicularGaitSpeedTest" Click="PerpendicularGaitSpeedTestClicked" 
-				Grid.Row="3" Margin="20" Width="200" Height="50" >Test de velocidad (perpendicular)</Button>
+				Grid.Row="4" Margin="20" Width="200" Height="50" >Test de velocidad (perpendicular)</Button>
 
         <Button x:Name="GetUpTest" Click="GetUpTestClicked" 
-				Grid.Row="4" Margin="20" Width="200" Height="50" >Test de levantarse de la silla</Button>
+				Grid.Row="5" Margin="20" Width="200" Height="50" >Test de levantarse de la silla</Button>
         
         <Button x:Name="BalanceTest" Click="BalanceTestClicked" 
-				Grid.Row="5" Margin="20" Width="200" Height="50" >Test de balanceo</Button>
+				Grid.Row="6" Margin="20" Width="200" Height="50" >Test de balanceo</Button>
         
     </Grid>
 </Window>

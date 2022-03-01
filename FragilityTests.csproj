@@ -39,8 +39,15 @@
       <HintPath>packages\M2Mqtt.4.3.0.0\lib\net45\M2Mqtt.Net.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Kinect, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
+    <Reference Include="QRCoder, Version=1.4.3.0, Culture=neutral, PublicKeyToken=c4ed5b9ae8358a28, processorArchitecture=MSIL">
+      <HintPath>packages\QRCoder.1.4.3\lib\net40\QRCoder.dll</HintPath>
+    </Reference>
+    <Reference Include="QRCoder.Xaml, Version=1.4.3.0, Culture=neutral, PublicKeyToken=8ca57126c5670df7, processorArchitecture=MSIL">
+      <HintPath>packages\QRCoder.Xaml.1.4.3\lib\net40\QRCoder.Xaml.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -63,6 +70,8 @@
       <DependentUpon>BalanceTestWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Communication\Example.cs" />
+    <Compile Include="Communication\KinectManager.cs" />
+    <Compile Include="Communication\QrCreator.cs" />
     <Compile Include="DataTest\BalanceTestResult.cs" />
     <Compile Include="DataTest\DataTestManager.cs" />
     <Compile Include="DataTest\GaitSpeedTestResult.cs" />

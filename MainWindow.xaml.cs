@@ -1,10 +1,13 @@
 ﻿
 using FragilityTests.Communication;
-using System;
+using QRCoder;
+using QRCoder.Xaml;
 using System.ComponentModel;
+using System.Drawing;
 using System.Threading;
 using System.Windows;
-
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace FragilityTests
 {
@@ -13,13 +16,22 @@ namespace FragilityTests
     {
         Thread listenerThread;
 
+
         public MainWindow()
         {
+            QRCodeGenerator qrGenerator = new QRCodeGenerator();
+            QRCodeData qrCodeData = qrGenerator.CreateQrCode("hola", QRCodeGenerator.ECCLevel.H);
+            XamlQRCode qrCode = new XamlQRCode(qrCodeData);
+            DrawingImage qrCodeAsXaml = qrCode.GetGraphic(20);
+
             InitializeComponent();
+            QrPicture.Source = qrCodeAsXaml;
             listenerThread = new Thread(ThreadWork.DoWork);
             listenerThread.IsBackground = true;
             listenerThread.Start();
+
         }
+
 
         private void GaitSpeedTestClicked(object sender, RoutedEventArgs e)
         {

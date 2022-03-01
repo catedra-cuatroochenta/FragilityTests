@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Threading;
@@ -22,7 +24,7 @@ namespace FragilityTests.Communication
         public Example()
         {
             Console.WriteLine("Conectando");
-
+            
             MqttClient client = new MqttClient("35.180.55.79");
             string clientId = "cameraKinect2";
             client.Connect(clientId);
